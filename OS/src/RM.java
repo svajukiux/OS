@@ -6,7 +6,26 @@ import org.apache.commons.codec.binary.Hex;
 
 public class RM {
 	private char[][][] memory;
+	private char MODE;
+	private Word PTR; // cia nereikia imti dvigubo nes char unsigned in java
+	private int PC;
+	private char SP;
+	private int TI; // TI PI SI galbut uztenka vieno baito?
+	private int PI;
+	private int SI;
+    private int CH; // galima atskirus 3 char registrus 
+    private char SF; // kur multiple baitai galima char arrays
+    
 	
+	
+	public int getSI() {
+		return SI;
+	}
+
+	public void setSI(int sI) {
+		SI = sI;
+	}
+
 	public RM() {
 		memory = new char[64][16][4];
 		for(int i=0; i<64; ++i) {

@@ -2,11 +2,11 @@
 // ideja dar daryti musu atminti is string tiesiog o ne char butu lengviau parsinti
 public class VM {
 	private Word memory[][];
-	private short SP;
-	private short PC;
-	private short SF;
-	private short DS;
-	private short CS; // short o ne byte nes nesamone su signed unsigned javoj PC galimai reiktu int nes jam reikia 2 baitu
+	private char SP;
+	private int PC; // int nes nera unsigned short 
+	private char SF; // cia bitus kazkaip reikes nustatinet
+	private char DS; // vietoj char gallima naudot short reikes ziuret kaip patogiau galbut short patogiau
+	private char CS; // short o ne byte nes nesamone su signed unsigned javoj PC galimai reiktu int nes jam reikia 2 baitu
 	//private SharedMemoryManager;
 	
 	
@@ -21,7 +21,7 @@ public class VM {
 		}
 		SP=0xE0; // cia prob negerai nes ne tokie bus bent jau su paging mechanizmu prob( paduot turbut reiktu i konstruktoriu)
 		DS=0x00;
-		CS=0x07;
+		CS=0x70;
 		PC=0;
 		SF=0;
 	}
@@ -37,55 +37,65 @@ public class VM {
 	}
 
 
-	public short getSP() {
+	public char getSP() {
 		return SP;
 	}
 
 
-	public void setSP(short sP) {
+	public void setSP(char sP) {
 		SP = sP;
 	}
 
 
-	public short getPC() {
+	public int getPC() {
 		return PC;
 	}
 
 
-	public void setPC(short pC) {
+	public void setPC(int pC) {
 		PC = pC;
 	}
 
 
-	public short getSF() {
+	public char getSF() {
 		return SF;
 	}
 
 
-	public void setSF(short sF) {
+	public void setSF(char sF) {
 		SF = sF;
 	}
 
 
-	public short getDS() {
+	public char getDS() {
 		return DS;
 	}
 
 
-	public void setDS(short dS) {
+	public void setDS(char dS) {
 		DS = dS;
 	}
 
 
-	public short getCS() {
+	public char getCS() {
 		return CS;
 	}
 
 
-	public void setCS(short cS) {
+	public void setCS(char cS) {
 		CS = cS;
 	}
 	
+	
+	public boolean processCommand(RM rm) { // true jei pavyko ivykdyti komanda false jei ne
+		int startingAddress = CS;
+		Word startingPosition = memory[startingAddress/16][startingAddress%16];   // TODO memory atskira parasyti klase su metodais manau
+		System.out.println(startingPosition);
+		if(rm.getSI()==7) {
+			return false;
+		}
+		return true;
+	}
 	
 
 }

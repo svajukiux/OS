@@ -174,14 +174,15 @@ public class ProgramParser {
 		while((line = br.readLine())!=null) { // kiek zejau beveik visos musu komandos visos telpa i viena zodi su psh
 			int length= line.length();
 			int added = 0;
-			while(length>=4) {								  // gali buti problemu nes ten x nurodyta bet manau kad galesim pushint tikrai daugiau
+			while(length>=4) {								  // gali buti problemu nes ten x nurodyta bet manau kad galesim pushint tikrai daugiau nei F
 				Word temp = new Word(line.substring(added, added+4).toCharArray());
 				commands.add(temp);
 				added+=4;
 				length=-4;
 			}
+			
 			// kolkas nerasau kas jei lieka liekana geriau butu pasistengt kad dalintusi is 4 musu komandos ilgiai
-											  // nei F
+											  
 										// tai tiesiog skaityt line ir vienam line 1 zodis
 			
 		}
@@ -199,6 +200,7 @@ public class ProgramParser {
 		for(int i=0; i<words.size(); i++) {
 			for(int j=0; j<4; j++) {
 				char currentByte = words.get(i).getByte(j);
+				
 				if(currentByte!='\u0000') {
 					vm.getMemory()[address/16][address%16].setByte(j,currentByte);
 				}

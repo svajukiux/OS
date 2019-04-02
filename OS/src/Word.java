@@ -32,5 +32,9 @@ public class Word {
 	void setBytes(char[] data) {
 		this.data=data;
 	}
+	
+	public String toString() {
+		return this.data.toString();
+	}
 }
 
