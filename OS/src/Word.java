@@ -6,7 +6,7 @@ public class Word {
 	public Word() {
 		data = new char[] {'0','0','0','0'}; // musu zodzio ilgis=4 ir pradzioje 0liai galbut geriau butu definint size 4 ir tada inicializtuot
 											 // su kokiu ciklu
-		//data = {'0','0','0','0'};
+		// galbut reikia inicijuotu nul tais o ne nuliais
 	}
 	
 	public Word(Word src) {
@@ -35,6 +35,21 @@ public class Word {
 	
 	public String toString() {
 		return this.data.toString();
+	}
+	
+	public boolean isEqualToString(String command) {
+		if(String.valueOf(data).equalsIgnoreCase(command)) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		
+	
+	}
+	public int toInt() {
+		 return Integer.parseInt(String.valueOf(data),16);
+		 
 	}
 }
 

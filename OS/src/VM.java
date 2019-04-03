@@ -91,9 +91,26 @@ public class VM {
 		int startingAddress = CS;
 		Word startingPosition = memory[startingAddress/16][startingAddress%16];   // TODO memory atskira parasyti klase su metodais manau
 		System.out.println(startingPosition);
-		if(rm.getSI()==7) {
+		if(rm.getSI()==7) { // programos pabaigos kodas is karto kazin ar false reikia
 			return false;
 		}
+		switch (String.valueOf(startingPosition.getBytes())) {
+			case "ADD ":  // arba pakeisti kad visos butu 4 daliklio ilgumo
+				PC++;
+				int stack = Integer.parseInt(String.valueOf(SP));
+				int stackAddress = Integer.parseInt(String.valueOf(SP));
+				Word pirmas = memory[stack/16][stack%16];
+				Word antras = memory[(stack-1)/16][(stack-1)%16];
+				int suma = pirmas.toInt() + antras.toInt();
+				// TODO flagu nustatymai pagal rezultata;
+				Word toPut = new Word(Integer.toHexString(suma).toCharArray());
+				memory[(stack-1)/16][(stack-1)%16]=toPut;
+				SP--;	
+				return true;
+			
+		}
+		
+		
 		return true;
 	}
 	

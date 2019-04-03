@@ -181,6 +181,11 @@ public class ProgramParser {
 				length=-4;
 			}
 			
+			if(length<4) {
+				Word temp = new Word(line.substring(added,added+3).toCharArray()); // nezinau tiksliai ar pirmus 3 uzims ar galutinius 3
+				temp.setByte(4, ' '); // gale tarpas jei mazesne nei 4 baitu komanda
+			}
+			
 			// kolkas nerasau kas jei lieka liekana geriau butu pasistengt kad dalintusi is 4 musu komandos ilgiai
 											  
 										// tai tiesiog skaityt line ir vienam line 1 zodis
