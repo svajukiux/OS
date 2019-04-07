@@ -1,5 +1,6 @@
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Random;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -106,6 +107,7 @@ public class RM {
 
 	public RM() {
 		CH = new char[] {'0','0','0'};
+		PTR = new Word();
 		memory = new Word[64][16];
 		for(int i=0; i<64; ++i) {
 			for(int j=0; j<16; ++j) {
@@ -114,6 +116,54 @@ public class RM {
 				
 			}
 		}
+	}
+	
+	public void loadVM(VM vm) {
+		int pagingBlock = new Random().nextInt(60); // 4 paskutiniai blokai uzimti bendrai atminciai ir jos info
+		System.out.println("Isskirta puslapiu lentele su PTR: " + pagingBlock);
+		int allocatedBlocks=0;
+		Word[] pagingTable = new Word[16];
+		for(int i=0; i<16; i++) {
+			pagingTable[i]= new Word();
+		}
+		int index = 0;
+		
+		while (allocatedBlocks<16) {
+			boolean validBlock = true;
+			int intBlock = new Random().nextInt(60); // naujas galimas blokas
+			if(intBlock==pagingBlock) {
+				validBlock=false;
+			}
+			else {
+				for (Word block : pagingTable) { // perziurim visus
+					if(block.toInt()==intBlock) {
+						validBlock = false;
+					}
+				}
+				if (validBlock) {
+					
+					pagingTable[index].fromInt(intBlock); // priskiria tinkama bloka i atitinkama vieta
+					System.out.println(pagingTable[index]);
+					index++;
+					allocatedBlocks++;
+				}
+			}
+			System.out.println("Sekmingai iskirta" + index + "  virtualiu bloku");
+		}
+			
+			PTR.setBytes(Integer.toHexString(pagingBlock).toCharArray()); // priskiriam PTR
+			
+			// binding virtual words to real words
+			int currentVirtualBlock=0;
+			for(Word pagingWords : pagingTable) {
+				int currentRealBlock = pagingWords.toInt();
+				System.out.println(pagingWords);
+				vm.assignMemoryBlock(this, currentVirtualBlock, currentRealBlock);
+				currentVirtualBlock++; // priskiriu blokus bet galbut reiktu atskirai zodzius bus matyt kaip veiks
+			}
+			
+			
+		
 	}
 	
 	public static String bytesToHex(byte[] bytes) {
@@ -137,7 +187,7 @@ public class RM {
 	    }
 	    return data;
 	}
-	
+	/*
 	public static void main(String args[]) {
 		String test = "HALT";
 		char[] test2= test.toCharArray();
@@ -174,4 +224,6 @@ public class RM {
 		//System.out.println()
 		
 	}
+	
+*/	
 }

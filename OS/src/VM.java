@@ -320,7 +320,7 @@ public class VM {
 			int vmNumber = Integer.parseInt(command.substring(3, 4)); // arba taip arba kazkoki turet auto nr priskyreja nereiktu i komanda rasyt
 			Word[][] rmMemory=rm.getMemory();
 			if(rmMemory[63][sharedBlockNr-1].toInt()==0) { // reiktu turbut while nes juk turetu laukti kol atsiblokuos
-				rmMemory[63][sharedBlockNr-1]= new Word().fromInt(vmNumber);// 63 last blokas kuriame sudeta info apie sharedmemory
+				rmMemory[63][sharedBlockNr-1].fromInt(vmNumber);// 63 last blokas kuriame sudeta info apie sharedmemory ??? buvo su Word metodu vietoj void
 			}
 			else {
 				System.out.println("Jau uzrakina");
@@ -525,6 +525,12 @@ public class VM {
 			}
 		}
 		
+	}
+	
+	public void assignMemoryBlock(RM rm, int virtualNumber,int realNumber){
+		Word[][] realMemory = rm.getMemory();
+		//System.out.println("Number " + realNumber +" "+ virtualNumber);
+		this.memory[virtualNumber]=realMemory[realNumber];
 	}
 	
 

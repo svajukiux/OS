@@ -53,9 +53,9 @@ public class Word {
 		 
 	}
 	
-	public Word fromInt(int number) {
+	public void fromInt(int number) {
 		
-		return new Word(Integer.toHexString(number).toCharArray()); // damn kazkaip reikia atgal i sesioliktaine
+		this.data = (Integer.toHexString(number).toCharArray()); // damn kazkaip reikia atgal i sesioliktaine
 	}
 }
 
