@@ -104,6 +104,80 @@ public class RM {
 	public void setSI(int sI) {
 		SI = sI;
 	}
+	
+	public int getInterrupt() {
+		switch(PI) {
+			case 1: return 1; // memory access interrupt
+			case 2: return 2; // bad operation code
+			case 3: return 3; // bad assign
+		}
+		switch(SI) {
+		case 1: return 4; // command RIx1x2
+		case 2: return 5; // command PRx1x2
+		case 3: return 6; // command IPSH
+		case 4: return 7; // command PPOP
+		case 5: return 8; // command LCxy
+		case 6: return 9; // command UCx
+		case 7: return 10; // command HALT
+		}
+		
+		if(TI==0) {
+			return 11; // timer interrupt
+		}
+		
+		return 0;
+	}
+	
+	public int processInterrupt() {
+		switch(getInterrupt()) {
+		
+		case 1:{
+			System.out.println("Out of bounds");
+			return 1;
+		}
+		case 2: {
+			System.out.println("Bad operation code");
+			return 1;
+		}
+		
+		case 3:{
+			System.out.println("Negeras priskyrimas");
+			return 1;
+		}
+		
+		case 4: {
+			// perkelt readinima
+			break;
+		}
+		case 5: {
+			// perkelt printinima
+			break;
+		}
+		case 6: {
+			// perkelt IPSH 
+			break;
+		}
+		case 7: {
+			// perkelt PPOP
+		}
+		case 8: {
+			// perkelt LCxy?
+		}
+		case 9: {
+			// perkelt UCx?
+		}
+		case 10: {
+			// reset interupts as well?
+			return 1; // HALT
+		}
+		case 11: {
+			TI=10; // reset TI
+			break;
+		}
+		
+		}
+		return 0;
+	}
 
 	public RM() {
 		CH = new char[] {'0','0','0'};
@@ -143,7 +217,7 @@ public class RM {
 				if (validBlock) {
 					
 					pagingTable[index].fromInt(intBlock); // priskiria tinkama bloka i atitinkama vieta
-					System.out.println(pagingTable[index]);
+					//System.out.println(pagingTable[index]);
 					index++;
 					allocatedBlocks++;
 				}
@@ -157,7 +231,7 @@ public class RM {
 			int currentVirtualBlock=0;
 			for(Word pagingWords : pagingTable) {
 				int currentRealBlock = pagingWords.toInt();
-				System.out.println(pagingWords);
+				//System.out.println(pagingWords);
 				vm.assignMemoryBlock(this, currentVirtualBlock, currentRealBlock);
 				currentVirtualBlock++; // priskiriu blokus bet galbut reiktu atskirai zodzius bus matyt kaip veiks
 			}
