@@ -5,7 +5,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
 public class RM {
-	private char[][][] memory;
+	private Word[][] memory;
 	private char MODE;
 	private Word PTR; // cia nereikia imti dvigubo nes char unsigned in java
 	private int PC;
@@ -13,11 +13,89 @@ public class RM {
 	private int TI; // TI PI SI galbut uztenka vieno baito?
 	private int PI;
 	private int SI;
-    private int CH; // galima atskirus 3 char registrus 
+    private char CH[]; // galima atskirus 3 char registrus 
     private char SF; // kur multiple baitai galima char arrays
     
 	
 	
+	public Word[][] getMemory() {
+		return memory;
+	}
+
+	public void setMemory(Word[][] memory) {
+		this.memory = memory;
+	}
+
+	public char getMODE() {
+		return MODE;
+	}
+
+	public void setMODE(char mODE) {
+		MODE = mODE;
+	}
+
+	public Word getPTR() {
+		return PTR;
+	}
+
+	public void setPTR(Word pTR) {
+		PTR = pTR;
+	}
+
+	public int getPC() {
+		return PC;
+	}
+
+	public void setPC(int pC) {
+		PC = pC;
+	}
+
+	public char getSP() {
+		return SP;
+	}
+
+	public void setSP(char sP) {
+		SP = sP;
+	}
+
+	public int getTI() {
+		return TI;
+	}
+
+	public void setTI(int tI) {
+		TI = tI;
+	}
+
+	public int getPI() {
+		return PI;
+	}
+
+	public void setPI(int pI) {
+		PI = pI;
+	}
+
+	public char[] getCH() {
+		return CH;
+	}
+
+	public void setCH(char[] cH) {
+		CH = cH;
+	}
+	public void setCHByte(int position) {
+		CH[position]=1;
+	}
+	public void unsetCHByte(int position) {
+		CH[position]=0;
+	}
+
+	public char getSF() {
+		return SF;
+	}
+
+	public void setSF(char sF) {
+		SF = sF;
+	}
+
 	public int getSI() {
 		return SI;
 	}
@@ -27,12 +105,12 @@ public class RM {
 	}
 
 	public RM() {
-		memory = new char[64][16][4];
+		CH = new char[] {'0','0','0'};
+		memory = new Word[64][16];
 		for(int i=0; i<64; ++i) {
 			for(int j=0; j<16; ++j) {
-				for(int k=0; k<4; k++) {
-					memory[i][j][k] = '0';
-				}
+				
+				memory[i][j]= new Word();	
 				
 			}
 		}

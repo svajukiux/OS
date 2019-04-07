@@ -34,7 +34,8 @@ public class Word {
 	}
 	
 	public String toString() {
-		return this.data.toString();
+		//return this.data.toString();
+		return new String(data);
 	}
 	
 	public boolean isEqualToString(String command) {
@@ -50,6 +51,11 @@ public class Word {
 	public int toInt() {
 		 return Integer.parseInt(String.valueOf(data),16);
 		 
+	}
+	
+	public Word fromInt(int number) {
+		
+		return new Word(Integer.toHexString(number).toCharArray()); // damn kazkaip reikia atgal i sesioliktaine
 	}
 }
 

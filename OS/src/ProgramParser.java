@@ -14,37 +14,41 @@ public class ProgramParser {
 		
 	}
 	
-	public ArrayList<String> parseFile(File file,VM vm) throws FileNotFoundException, IOException{ //for now parses if there is only 1 program in a file
-		ArrayList<String> commands = new ArrayList<>();
+	public boolean parseFile(File file,VM vm) throws FileNotFoundException, IOException{ //for now parses if there is only 1 program in a file
+		//ArrayList<String> commands = new ArrayList<>();
 		BufferedReader br = new BufferedReader(new FileReader(file));
 		String line;
-		boolean isDataParsed=false;
+		//boolean isDataParsed=false;
 		
 		while((line = br.readLine()) !=null) {
+			System.out.println(line);
 			if(line.equalsIgnoreCase("DATA")) {
 				parseData(br,vm);
-				isDataParsed=true;
+				//isDataParsed=true;
+				
 				
 			}
 			if(line.equalsIgnoreCase("CODE")) {
-				if(isDataParsed==false) {
+				
 					throw new IOException("DATA should be written before CODE");
 					
-				}
-				else {
-					parseCode(br);
-				}
 			}
+		
+			System.out.println("Hi");
+			parseCode(br,vm);
+			
+				
+			
 		}
 		
-		return commands;
+		return true;
 		
 		
 	}
 	
 	private void parseData(BufferedReader br, VM vm) throws IOException {
 		String line;
-		int dataWords =0; // kolkas nezinau kam
+		//int dataWords =0; // kolkas nezinau kam
 		
 		while(((line = br.readLine())!=null)) {
 			if(line.equalsIgnoreCase("CODE")){
@@ -87,12 +91,12 @@ public class ProgramParser {
 								int left=length;
 								if(arZodis==true) { // jei zodis aka w faile desim baitus nuo galo (faile bus skaicius paduotas)
 									
-									int position=3; // pradine pozicija 4 baitas, keliame nuo galo
+									int position=4-left; // pradine pozicija 4 baitas, keliame nuo galo
 									while(left>0) {
 										temp.setByte(position, data[i].charAt(lenghtCopied));
 										lenghtCopied++;
 										left--;
-										position--;
+										position++;
 									}
 									rawData.add(temp);
 									
@@ -135,11 +139,12 @@ public class ProgramParser {
 								if(length<4) {
 									Word temp = new Word();
 									int left=length;
-									int position=3; // pradine pozicija 4 baitas, keliame nuo galo
-									for(int k=0; k<length; k++) {
+									int position=4-left; // pradine pozicija 4 baitas, keliame nuo galo
+									for(int k=0; k<left; k++) { // length?
 										temp.setByte(position, data[i].charAt(i));
-										position--;
+										position++;
 									}
+									rawData.add(temp);
 								}
 							}
 							else { // again "b" reiktu deti nuo priekio nors manau kad retai kada prireiks su skaiciais 
@@ -153,6 +158,7 @@ public class ProgramParser {
 					}
 			}	
 			if(arZodis==true) {
+				
 				loadDataAsWords(rawData,currentAddress,vm); // loads line of data if it was words
 			}
 			else if(arZodis==false) {
@@ -163,39 +169,62 @@ public class ProgramParser {
 		
 	}
 	
-	private void parseCode(BufferedReader br) throws IOException {
+	private void parseCode(BufferedReader br, VM vm) throws IOException {
 		if(!parsedDataGracefully) {
 			throw new IOException("Neteisingas programos formatavimas");
 			
 		}
+		
 		// ir ar reikia pries code segmenta parasyti pradine reiksme nes mes turim tuos registrus
 		String line;
 		ArrayList<Word> commands = new ArrayList<>();
 		while((line = br.readLine())!=null) { // kiek zejau beveik visos musu komandos visos telpa i viena zodi su psh
 			int length= line.length();
 			int added = 0;
-			while(length>=4) {								  // gali buti problemu nes ten x nurodyta bet manau kad galesim pushint tikrai daugiau nei F
+			
+			if(length<4 && length!=0) { // jei 3 baitu komanda
+				
+				Word temp = new Word(line.substring(added,added+3).toCharArray()); // nezinau tiksliai ar pirmus 3 uzims ar galutinius 3
+				temp.setByte(4, ' '); // gale tarpas jei mazesne nei 4 baitu komanda
+				commands.add(temp);
+			}
+			
+			while(length-4>=0) {
+				// gali buti problemu nes ten x nurodyta bet manau kad galesim pushint tikrai daugiau nei F
 				Word temp = new Word(line.substring(added, added+4).toCharArray());
 				commands.add(temp);
 				added+=4;
-				length=-4;
+				length-=4;
+				
 			}
 			
-			if(length<4) {
-				Word temp = new Word(line.substring(added,added+3).toCharArray()); // nezinau tiksliai ar pirmus 3 uzims ar galutinius 3
-				temp.setByte(4, ' '); // gale tarpas jei mazesne nei 4 baitu komanda
+			if(length<4 && length!=0) { // PSH x komandai
+				Word temp = new Word();
+				int left=length;
+				int position=4-left;
+				System.out.println("position" + position);
+				for(int k=0; k<left; k++) { // length?
+					temp.setByte(position, line.charAt(added+k));
+					position++;
+				}
+				commands.add(temp);
 			}
+			
 			
 			// kolkas nerasau kas jei lieka liekana geriau butu pasistengt kad dalintusi is 4 musu komandos ilgiai
 											  
 										// tai tiesiog skaityt line ir vienam line 1 zodis
-			
+			loadDataAsWords(commands,vm.getCS(),vm);
 		}
 	}
 	
 	private void loadDataAsWords(ArrayList<Word> words, int address, VM vm) { // address 2 baitai uzloadina eilute nuskaitytu zodziu
+		
 		for(int i=0; i<words.size();i++) {
+			
+			
 			vm.getMemory()[address/16][address%16] = words.get(i);
+			
 			address++;
 		}
 		
