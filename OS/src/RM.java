@@ -24,6 +24,7 @@ public class RM {
     
     private SharedMemoryManager manager;
     private ProgramParser parser;
+    private OutputDevice outputDevice;
     private int lastCreatedVm;
     //private VM[] vms = {null, null, null};
     
@@ -152,7 +153,7 @@ public class RM {
 			return 1;
 		}
 		case 2: {
-			System.out.println("Bad operation code"); // jau yra
+			System.out.println("Bad operation code"); // jau yra kas kviecia
 			return 1;
 		}
 		
@@ -174,6 +175,11 @@ public class RM {
 			break;
 		}
 		case 7: {
+			Word[][] vmMemory = vm.getMemory();
+			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			outputDevice.printWord(vmMemory[stack/16][stack%16]);
+			SP--;
+			SI=0;
 			// perkelt PPOP
 		}
 		case 8: {
@@ -197,7 +203,9 @@ public class RM {
 			}
 		}
 		case 10: {
-			// reset interupts as well?
+			this.SI=0;
+			this.PI=0;
+			this.TI=10; // uzdet koki reset metoda 
 			return 1; // HALT
 		}
 		case 11: {
@@ -224,6 +232,7 @@ public class RM {
 			}
 		}
 		parser = new ProgramParser();
+		//inputOutput
 	}
 	
 	public VM loadProgram(File file) {
@@ -452,10 +461,9 @@ public class RM {
 			case "PPOP": {
 				setMODE('1');
 				setSI(4);
-				setCHByte(1); // 1asis channel (nuo nulio skaiciuojame)
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-				System.out.print(vmMemory[stack/16][stack%16]);
-				SP--;
+				setCHByte(1); // 2asis channel (nuo nulio skaiciuojame)
+				PC++;
+				vm.setPC(PC);
 				return command;
 				
 			}
@@ -539,7 +547,7 @@ public class RM {
 			setSI(5); // LC pertraukimas lock bendra atminti
 			//int sharedBlockNr = Integer.parseInt(command.substring(2, 3));
 			//rm.getManager().setBlockNr(sharedBlockNr);
-			getManager().setVmIndex(vm.getVmIndex());
+			//getManager().setVmIndex(vm.getVmIndex());
 			// vm numerio komandoje nebera int vmNumber = Integer.parseInt(command.substring(3, 4)); // arba taip arba kazkoki turet auto nr priskyreja nereiktu i komanda rasyt
 			PC++;
 			vm.setPC(PC);
@@ -548,20 +556,25 @@ public class RM {
 		}
 		
 		if(command.startsWith("UC")) {
-			int sharedBlockNr = Integer.parseInt(command.substring(2, 3));
-			int vmNumber = vm.getVmIndex();// kuriant vm sugeneruoti
-			//Word[][] rmMemory=rm.getMemory();
-			int intValue= memory[63][sharedBlockNr-1].toInt(); // reiksme zodzio su info
-			if(intValue!=0 && intValue==vmNumber ) { // reiktu turbut while nes juk turetu laukti kol atsiblokuos
-				memory[63][sharedBlockNr-1]= new Word();// 63 last blokas kuriame sudeta info apie sharedmemory
-			}
-			else if(intValue!=0 && intValue!=vmNumber) {
-				System.out.println("Si masina negali atblokuoti sio zodzio"); // turut reikt pertraukimo?
-			}
-			else if(intValue==0) {
-				System.out.println("Sritis jau atblokuota");	
-			}
+			setMODE('1');
+			setSI(6);
+			//getManager().set
 			PC++;
+			vm.setPC(PC);
+			//int sharedBlockNr = Integer.parseInt(command.substring(2, 3));
+			//int vmNumber = vm.getVmIndex();// kuriant vm sugeneruoti
+			//Word[][] rmMemory=rm.getMemory();
+			//int intValue= memory[63][sharedBlockNr-1].toInt(); // reiksme zodzio su info
+			//if(intValue!=0 && intValue==vmNumber ) { // reiktu turbut while nes juk turetu laukti kol atsiblokuos
+			//	memory[63][sharedBlockNr-1]= new Word();// 63 last blokas kuriame sudeta info apie sharedmemory
+			//}
+			//else if(intValue!=0 && intValue!=vmNumber) {
+			//	System.out.println("Si masina negali atblokuoti sio zodzio"); // turut reikt pertraukimo?
+			//}
+		//	else if(intValue==0) {
+			//	System.out.println("Sritis jau atblokuota");	
+		//	}
+		//	PC++;
 			return command;
 			
 		}

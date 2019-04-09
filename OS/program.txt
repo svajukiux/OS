@@ -1,0 +1,9 @@
+DATA
+0 w 1
+1 w 2
+CODE
+LD00
+LD01
+CMP 
+JN00
+HALT
