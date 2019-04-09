@@ -42,7 +42,23 @@ public class InteractiveOS {
 			rm.setMODE('0'); // 0 is user mode
 			while(rm.getInterrupt()==0) {
 				 command = rm.processCommand(vm);
+				//String command="Labas";
+					for(int i=0; i<10; i++) {
+						rm.processCommand(vm);
+						//System.out.println(command);
+						Word[][] memory = vm.getMemory();
+						for(int j=0; j<16; j++) {
+							System.out.println();
+							for(int k=0; k<16; k++) {
+								System.out.print(memory[j][k].data);
+								System.out.print(" ");
+								
+							}
+						}
+						System.out.println("End ");
+					}
 			}
+			
 			
 			rm.setMODE('1'); // supervisor mode
 			if(rm.processInterrupt(vm)==1) { // HALT
@@ -52,21 +68,8 @@ public class InteractiveOS {
 		
 		
 		
-		//String command="Labas";
-		for(int i=0; i<10; i++) {
-			rm.processCommand(vm);
-			//System.out.println(command);
-			Word[][] memory = vm.getMemory();
-			for(int j=0; j<16; j++) {
-				System.out.println();
-				for(int k=0; k<16; k++) {
-					System.out.print(memory[j][k].data);
-					System.out.print(" ");
-					
-				}
-			}
-			System.out.println("End ");
-		}
+		
+		
 		
 		//System.out.println(Arrays.deepToString(vm.getMemory()));
 		

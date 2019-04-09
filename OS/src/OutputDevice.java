@@ -6,5 +6,13 @@ public class OutputDevice {
 		
 	}
 	
+	public void printBytes(char [] bytes) {
+		for(int i=0; i<bytes.length; i++) {
+			System.out.print(bytes[i]);
+		}
+		System.out.println("");
+		
+	}
+	
 	
 }

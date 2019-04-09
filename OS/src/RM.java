@@ -25,6 +25,7 @@ public class RM {
     private SharedMemoryManager manager;
     private ProgramParser parser;
     private OutputDevice outputDevice;
+    private InputDevice inputDevice;
     private int lastCreatedVm;
     //private VM[] vms = {null, null, null};
     
@@ -164,23 +165,71 @@ public class RM {
 		
 		case 4: {
 			// perkelt readinima
+			Word[][] vmMemory = vm.getMemory();
+			String command = vmMemory[vm.getPC()-1][vm.getPC()-1].toString();
+			int stack = (int)SP;
+			int numberOfBytes= vmMemory[stack/16][stack%16].toInt();
+			
+			int posl = Integer.parseInt(command.substring(2,4)); // 2 paskutiniai sk
+			int address = vm.getDS()+posl;
+			ArrayList <Word> readWords = inputDevice.readBytes(numberOfBytes);
+			loadDataAsBytes(readWords,address,vm);
+			SP--;
+			SI=0;
+			unsetCHByte(0);
 			break;
 		}
 		case 5: {
 			// perkelt printinima
+			Word[][] vmMemory = vm.getMemory();
+			int stack = (int)SP;// Integer.parseInt(String.valueOf(SP),16);
+			int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
+			String command = vmMemory[vm.getCS()+PC-1][vm.getCS()+PC-1].toString();
+			int posl = Integer.parseInt(command.substring(2,4));
+			char[] isvestis = new char[numberOfBytes];
+			int tempi=0;
+			int posl2=posl % 16;
+			for (int i=0; i<numberOfBytes; i++) {
+				isvestis[i]=vmMemory[posl +vm.getDS()/16][posl2 + vm.getDS()%16].getByte(tempi);
+				tempi++;
+					if(tempi==3) {
+						tempi=0;
+					}
+					if(posl2+1<16) {
+						posl2++; 
+					}
+					else {
+						posl++;
+						posl2=0;
+					}
+			}
+			outputDevice.printBytes(isvestis);
+			SI=0;
+			unsetCHByte(1);
+			//int startingPlace=Integer.parseInt(command.substring(2,4),16);
 			break;
 		}
 		case 6: {
-			// perkelt IPSH 
+			// perkelt IPSH
+			Word[][] vmMemory = vm.getMemory();
+			SP++;
+			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			Word temp = inputDevice.readWord();
+			vmMemory[stack/16][stack%16] = temp;
+			unsetCHByte(0);
+			
 			break;
 		}
 		case 7: {
+			// perkelt PPOP
 			Word[][] vmMemory = vm.getMemory();
 			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
 			outputDevice.printWord(vmMemory[stack/16][stack%16]);
 			SP--;
 			SI=0;
-			// perkelt PPOP
+			unsetCHByte(1);
+			break;
+			
 		}
 		case 8: {
 			// LCxy
@@ -232,7 +281,8 @@ public class RM {
 			}
 		}
 		parser = new ProgramParser();
-		//inputOutput
+		outputDevice = new OutputDevice();
+		inputDevice = new InputDevice();
 	}
 	
 	public VM loadProgram(File file) {
@@ -472,17 +522,18 @@ public class RM {
 				setMODE('1');
 				setSI(3);
 				setCHByte(0);
-				SP++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-				try {
-					String s = br.readLine();
-					int length =s.length();
-					if(length>4) {
-						System.out.println("Klaida. Ivestis ilgesne nei 4 baitai");
-					}
+				
+				//SP++;
+				//int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				//BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+				//try {
+				//	String s = br.readLine();
+				//	int length =s.length();
+				//	if(length>4) {
+				//		System.out.println("Klaida. Ivestis ilgesne nei 4 baitai");
+				//	}
 					
-					else if(length==4) {
+				/*	else if(length==4) {
 						vmMemory[stack/16][stack%16]= new Word(s.toCharArray());
 						}
 					else if(length<4) {
@@ -500,6 +551,7 @@ public class RM {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				*/
 				return command;
 				
 				
@@ -589,6 +641,14 @@ public class RM {
 			//vm.setSP(SP);
 			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
 			System.out.println(" Stack: " +stack);
+			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
+				SP=0xE0;
+				stack=SP;
+			}
+			if(stack/16<=14) {
+				SP=0xFF;
+				stack=SP;
+			}
 			vmMemory[stack/16][stack%16]=vmMemory[dsValue+poslinkis/16][dsValue+poslinkis%16]; 
 			PC++;
 			return command;
@@ -599,6 +659,14 @@ public class RM {
 			int address = Integer.parseInt(stringAddress,16);
 			int dsValue = (int)vm.getDS();
 			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
+				SP=0xE0;
+				stack=SP;
+			}
+			if(stack/16<=14) {
+				SP=0xFF;
+				stack=SP;
+			}
 			vmMemory[dsValue+address/16][dsValue+address%16]=vmMemory[stack/16][stack/16];
 			SP--;
 			PC++;
@@ -651,90 +719,92 @@ public class RM {
 		}
 		
 		if(command.startsWith("RI")) {
-			int dsValue = (int)vm.getDS();
+			//int dsValue = (int)vm.getDS();
 			setMODE('1'); // supervizoriaus
 			// kolkas skaitymas cia bet reiks perkelti prie RM
 			setSI(1);
-			setCHByte(0); // uzsetinam 0lini channel
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-			int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
-			SP--;
-			String s;
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			try {
-				s= br.readLine();
-				if(s.length()!=numberOfBytes) {
-					System.out.println("Baitu skaicius neatitinka skaicaus steko virsuneje");
-				}
-				int startingPlace=Integer.parseInt(command.substring(2,4),16);
+			setCHByte(0); // uzsetinam 1-a channel skaiciuojam 0
+			//int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			//int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
+			//SP--;
+			//String s;
+			//BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			//try {
+			//	s= br.readLine();
+			//	if(s.length()!=numberOfBytes) {
+			//		System.out.println("Baitu skaicius neatitinka skaicaus steko virsuneje");
+			//	}
+				//int startingPlace=Integer.parseInt(command.substring(2,4),16);
 				
 				//if(numberOfBytes%4==0) {
 					//int wordCount=numberOfBytes/4;
-					int doneBytes=0;
-					ArrayList<Word> words = new ArrayList<>();
-					while(numberOfBytes-4 >=0) {
+					//int doneBytes=0;
+					//ArrayList<Word> words = new ArrayList<>();
+					//while(numberOfBytes-4 >=0) {
 						
-						Word word = new Word(s.substring(0+doneBytes,4+doneBytes).toCharArray());
-						vmMemory[dsValue+startingPlace/16][dsValue+startingPlace%16]=new Word(word);
-						startingPlace++;
-						doneBytes+=4;
-						numberOfBytes-=4;
-						words.add(word);
-					}
-					if(numberOfBytes<4 && numberOfBytes>0) {
-						Word word = new Word();
-						word.setBytes(new char[]{'\u0000','\u0000','\u0000','\u0000'});
-						int left= numberOfBytes;
-						int position = 0;
-						for(int i=0; i<left; i++) {
-							word.setByte(position, s.charAt(doneBytes));
-							doneBytes++;
-							position++;
-						}
-						words.add(word);
-					}
-					loadDataAsBytes(words,startingPlace,vm);
+					//	Word word = new Word(s.substring(0+doneBytes,4+doneBytes).toCharArray());
+						//sito anyway nereikia? nes kitaip 2 kartus pridetumevmMemory[dsValue+startingPlace/16][dsValue+startingPlace%16]=new Word(word);
+					//	startingPlace++;
+					//	doneBytes+=4;
+					//	numberOfBytes-=4;
+					//	words.add(word);
+					//}
+					//if(numberOfBytes<4 && numberOfBytes>0) {
+					//	Word word = new Word();
+					//	word.setBytes(new char[]{'\u0000','\u0000','\u0000','\u0000'});
+					//	int left= numberOfBytes;
+					//	int position = 0;
+					//	for(int i=0; i<left; i++) {
+					//		word.setByte(position, s.charAt(doneBytes));
+					//		doneBytes++;
+					//		position++;
+					//	}
+					//	words.add(word);
+					//}
+					//loadDataAsBytes(words,startingPlace,vm);
 				//}
 				
 				//for(int i=0; i<numberOfBytes; i++) {
 				//	memory[startingPlace/16][startingPlace%16] // visur kur data reikia DS + statingPlace pvz nes nurodom tik poslinki
 				//}
-			} catch (IOException e) {
+			//} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			setMODE('0'); // supervizoriaus
+			//	e.printStackTrace();
+			//}
+			//setMODE('0'); // supervizoriaus
 			
-			setSI(0);
-			unsetCHByte(0); // uzsetinam 0lini channel
+		//	setSI(0);
+		//	unsetCHByte(0); // uzsetinam 0lini channel
+			PC++;
+			vm.setPC(PC);
 			
 			return command;
 			
 		}
 		
 		if(command.startsWith("PR")) {
-			int dsValue = (int)vm.getDS();
+			//int dsValue = (int)vm.getDS();
 			setMODE('1');
 			setSI(2);
 			setCHByte(1);
-			int stack = (int)SP;// Integer.parseInt(String.valueOf(SP),16);
-			int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
-			int startingPlace=Integer.parseInt(command.substring(2,4),16);
+			//int stack = (int)SP;// Integer.parseInt(String.valueOf(SP),16);
+			//int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
+			//int startingPlace=Integer.parseInt(command.substring(2,4),16);
 			
-			SP--;
-			int tempi=0;
-			for(int i=0; i<numberOfBytes; i++) {
-				System.out.print(vmMemory[dsValue+startingPlace/16][dsValue+startingPlace%16].getByte(tempi));
-				tempi++;
-				if(tempi==3) {
-					tempi=0;
-					startingPlace++;
-					System.out.println("");
-				}
-			}
-			setMODE('0');
-			setSI(0);
-			unsetCHByte(1);
+		//	SP--;
+			//int tempi=0;
+			//for(int i=0; i<numberOfBytes; i++) {
+			//	System.out.print(vmMemory[dsValue+startingPlace/16][dsValue+startingPlace%16].getByte(tempi));
+			//	tempi++;
+			//	if(tempi==3) {
+			//		tempi=0;
+			//		startingPlace++; // bloko nereikia didint blogai cia
+			//		System.out.println("");
+				//}
+			//}
+			//setMODE('0');
+			//setSI(0);
+			//unsetCHByte(1);
 			return command;
 		}
 		
