@@ -27,6 +27,7 @@ public class RM {
     private OutputDevice outputDevice;
     private InputDevice inputDevice;
     private int lastCreatedVm;
+    private ChannelDevice channelDevice;
     //private VM[] vms = {null, null, null};
     
 	public SharedMemoryManager getManager() {
@@ -283,6 +284,7 @@ public class RM {
 		parser = new ProgramParser();
 		outputDevice = new OutputDevice();
 		inputDevice = new InputDevice();
+		channelDevice = new ChannelDevice();
 	}
 	
 	public VM loadProgram(File file) {
