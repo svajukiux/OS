@@ -101,7 +101,7 @@ public class InteractiveOS {
 						
 						rm.setMODE('1'); // supervisor mode
 						if(rm.processInterrupt(vm)==1) { // HALT
-							Word[][] memory = vm.getMemory();
+							//Word[][] memory = vm.getMemory();
 							printRegisters(rm);
 							printRegisters(vm);
 							printChannelStates(rm);

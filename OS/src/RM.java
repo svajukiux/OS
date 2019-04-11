@@ -174,7 +174,12 @@ public class RM {
 			
 			int posl = Integer.parseInt(command.substring(2,4)); // 2 paskutiniai sk
 			int address = vm.getDS()+posl;
-			ArrayList <Word> readWords = inputDevice.readBytes(numberOfBytes);
+			channelDevice.setSB(1);// kopijuojam pirma takeli// Zygimantas
+            channelDevice.setDB(1);// dedam i pirma takeli// Zygimantas
+            channelDevice.setST(1);// is ivedimo irenginio// Zygimantas
+            channelDevice.setDT(4);// i vartotojo atminti (steka)// Zygimantas
+			//ArrayList <Word> readWords = inputDevice.readBytes(numberOfBytes);
+            ArrayList <Word> readWords = channelDevice.xchg(inputDevice, numberOfBytes);// vykdomas duomenu pakeitimas// Zygimantas
 			loadDataAsBytes(readWords,address,vm);
 			SI=0;
 			unsetCHByte(0);
@@ -204,7 +209,12 @@ public class RM {
 						posl2=0;
 					}
 			}
-			outputDevice.printBytes(isvestis);
+			channelDevice.setSB(2);// kopijuojam antra takeli// Zygimantas
+            channelDevice.setDB(2);// dedam i antra takeli// Zygimantas
+            channelDevice.setST(4);// is ivedimo irenginio// Zygimantas
+            channelDevice.setDT(1);// i vartotojo atminti (steka)// Zygimantas
+            channelDevice.xchg(outputDevice, isvestis);// vykdomas duomenu pakeitimas// Zygimantas
+			//outputDevice.printBytes(isvestis);
 			SI=0;
 			unsetCHByte(1);
 			//int startingPlace=Integer.parseInt(command.substring(2,4),16);
@@ -215,7 +225,12 @@ public class RM {
 			Word[][] vmMemory = vm.getMemory();
 			SP++;
 			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-			Word temp = inputDevice.readWord();
+			channelDevice.setSB(1);// kopijuojam pirma takeli// Zygimantas
+            channelDevice.setDB(1);// dedam i pirma takeli// Zygimantas
+            channelDevice.setST(1);// is ivedimo irenginio// Zygimantas
+            channelDevice.setDT(4);// i vartotojo atminti (steka)// Zygimantas
+            Word temp = channelDevice.xchg(inputDevice);// vykdomas duomenu pakeitimas// Zygimantas
+			//Word temp = inputDevice.readWord();
 			vmMemory[stack/16][stack%16] = temp;
 			unsetCHByte(0);
 			
@@ -224,8 +239,13 @@ public class RM {
 		case 7: {
 			// perkelt PPOP
 			Word[][] vmMemory = vm.getMemory();
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-			outputDevice.printWord(vmMemory[stack/16][stack%16]);
+			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16)
+			channelDevice.setSB(2);// kopijuojam antra takeli// Zygimantas
+            channelDevice.setDB(2);// dedam i antra takeli// Zygimantas
+            channelDevice.setST(1);// is ivedimo irenginio// Zygimantas
+            channelDevice.setDT(4);// i vartotojo atminti (steka)// Zygimantas
+            channelDevice.xchg(outputDevice, vmMemory, stack);// vykdomas duomenu pakeitimas;
+			//outputDevice.printWord(vmMemory[stack/16][stack%16]);
 			SP--;
 			SI=0;
 			unsetCHByte(1);
