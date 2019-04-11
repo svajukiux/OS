@@ -34,10 +34,10 @@ public class VM {
 				
 			}
 		}
-		SP=0xE0;
+		SP=0xDF; // top = -1
 		DS=0x00;
 		CS=0x70;
-		PC=0; // CS 
+		PC=0; //  i CS pakeisti reike visur 
 		SF=0;
 		
 		//System.out.println("DS: " +DS);

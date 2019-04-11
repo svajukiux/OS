@@ -7,21 +7,30 @@ import java.util.ArrayList;
 
 public class ProgramParser {
 	boolean parsedDataGracefully;
+	boolean hasParsedCode;
 	
 	public ProgramParser() {
 		super();
 		parsedDataGracefully=false;
+		hasParsedCode=false;
 		
 	}
 	
-	public boolean parseFile(File file,VM vm) throws FileNotFoundException, IOException{ //for now parses if there is only 1 program in a file
+	public boolean parseFile(File file,VM vm, String program) throws FileNotFoundException, IOException{ //for now parses if there is only 1 program in a file
 		//ArrayList<String> commands = new ArrayList<>();
 		BufferedReader br = new BufferedReader(new FileReader(file));
-		String line;
+		
+		String line="";
+		
 		//boolean isDataParsed=false;
 		
-		while((line = br.readLine()) !=null) {
-			System.out.println(line);
+		while(!program.equals(line=br.readLine())) {
+			System.out.println("why" +line);
+			continue;
+		}
+		
+		while((line = br.readLine()) !=null && hasParsedCode==false) {
+			System.out.println("wtf"+line);
 			if(line.equalsIgnoreCase("DATA")) {
 				parseData(br,vm);
 				//isDataParsed=true;
@@ -40,7 +49,8 @@ public class ProgramParser {
 				
 			
 		}
-		
+		parsedDataGracefully=false;
+		hasParsedCode=false;
 		return true;
 		
 		
@@ -179,14 +189,17 @@ public class ProgramParser {
 		// ir ar reikia pries code segmenta parasyti pradine reiksme nes mes turim tuos registrus
 		String line;
 		ArrayList<Word> commands = new ArrayList<>();
-		while((line = br.readLine())!=null) { // kiek zejau beveik visos musu komandos visos telpa i viena zodi su psh
+		while((line = br.readLine())!=null && !(line.equals("*"))) { // kiek zejau beveik visos musu komandos visos telpa i viena zodi su psh
+			System.out.println("command parsing"+ line);
 			int length= line.length();
 			int added = 0;
 			
 			if(length<4 && length!=0) { // jei 3 baitu komanda
 				
-				Word temp = new Word(line.substring(added,added+3).toCharArray()); // nezinau tiksliai ar pirmus 3 uzims ar galutinius 3
-				temp.setByte(4, ' '); // gale tarpas jei mazesne nei 4 baitu komanda
+				String nonWordCommand= line.substring(added,added+3).concat(" ");
+				Word temp = new Word(nonWordCommand.toCharArray()); // nezinau tiksliai ar pirmus 3 uzims ar galutinius 3
+				//temp.setByte(3, ' '); // gale tarpas jei mazesne nei 4 baitu komanda
+				length-=3;
 				commands.add(temp);
 			}
 			
@@ -216,6 +229,8 @@ public class ProgramParser {
 											  
 										// tai tiesiog skaityt line ir vienam line 1 zodis
 			loadDataAsWords(commands,vm.getCS(),vm);
+			hasParsedCode=true;
+			
 		}
 	}
 	

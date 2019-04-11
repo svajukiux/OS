@@ -168,6 +168,7 @@ public class RM {
 			// perkelt readinima
 			Word[][] vmMemory = vm.getMemory();
 			String command = vmMemory[vm.getPC()-1][vm.getPC()-1].toString();
+			SP--;
 			int stack = (int)SP;
 			int numberOfBytes= vmMemory[stack/16][stack%16].toInt();
 			
@@ -175,7 +176,6 @@ public class RM {
 			int address = vm.getDS()+posl;
 			ArrayList <Word> readWords = inputDevice.readBytes(numberOfBytes);
 			loadDataAsBytes(readWords,address,vm);
-			SP--;
 			SI=0;
 			unsetCHByte(0);
 			break;
@@ -253,9 +253,9 @@ public class RM {
 			}
 		}
 		case 10: {
-			this.SI=0;
-			this.PI=0;
-			this.TI=10; // uzdet koki reset metoda 
+			//this.SI=0;
+			//this.PI=0;
+			//this.TI=10; // uzdet koki reset metoda 
 			return 1; // HALT
 		}
 		case 11: {
@@ -271,7 +271,9 @@ public class RM {
 		CH = new char[] {'0','0','0'};
 		PTR = new Word();
 		SF = '0';
+		TI=10;
 		lastCreatedVm=0; 
+		MODE = '0';
 		manager = new SharedMemoryManager(60,3); // bendra atmintis prasideda 60 bloke ir yra 3 bendri blokai
 		memory = new Word[64][16];
 		for(int i=0; i<64; ++i) {
@@ -287,7 +289,7 @@ public class RM {
 		channelDevice = new ChannelDevice();
 	}
 	
-	public VM loadProgram(File file) {
+	public VM loadProgram(File file, String program) {
 		VM vm = new VM();
 		this.lastCreatedVm+=1;
 		vm.setVmIndex(lastCreatedVm); // suteikiam vm numeri
@@ -335,13 +337,17 @@ public class RM {
 			}
 			
 			try {
-				parser.parseFile(file, vm);
+				//parser.hasParsedCode=false;
+				//parser.parsedDataGracefully=false;
+				parser.parseFile(file, vm, program);
+				
 				this.PC=vm.getPC(); // vel nzn cia gal turi buti PC kur reali masina rodo
 				this.SF= vm.getSF();
 				this.SP = vm.getSP();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				 return null;
 			}
 		return vm;	
 		
@@ -373,7 +379,7 @@ public class RM {
 		int startingAddress = (int)vm.getCS()+(int)PC;
 		Word[][] vmMemory = vm.getMemory(); // gauname subindinta puslapiu mechanizmu virtualia atminti
 		Word startingPosition = vmMemory[startingAddress/16][startingAddress%16];   // TODO memory atskira parasyti klase su metodais manau
-		System.out.println("startingAddress " +startingAddress);
+		//System.out.println("startingAddress " +startingAddress);
 		//if(rm.getSI()==7) { // programos pabaigos kodas is karto kazin ar false reikia
 		//	
 		//	return "HALT";
@@ -560,7 +566,7 @@ public class RM {
 			}
 			case "HALT": {
 				System.out.println("Programos pabaiga");
-				setSI(10);
+				setSI(7);
 				// decr timer 
 				// pertraukimas
 				PC++;
@@ -642,17 +648,20 @@ public class RM {
 			SP++;
 			//vm.setSP(SP);
 			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
-			System.out.println(" Stack: " +stack);
+			
 			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
 				SP=0xE0;
 				stack=SP;
 			}
-			if(stack/16<=14) {
+			if(stack<223) { // nelabai reikia nes neatimineja cia SP
 				SP=0xFF;
 				stack=SP;
 			}
+			//System.out.println(" Stack: " +stack);
 			vmMemory[stack/16][stack%16]=vmMemory[dsValue+poslinkis/16][dsValue+poslinkis%16]; 
 			PC++;
+			vm.setPC(PC);
+			vm.setSP(SP);
 			return command;
 		}
 		
@@ -672,6 +681,9 @@ public class RM {
 			vmMemory[dsValue+address/16][dsValue+address%16]=vmMemory[stack/16][stack/16];
 			SP--;
 			PC++;
+			vm.setPC(PC);
+			vm.setSP(SP); /// gal atvirksciai? keiciam virtualios ir gale nustatom realios turbut taip ir geriau bus reiks pakeist
+			
 			return command;
 		}
 		
@@ -710,7 +722,7 @@ public class RM {
 		}
 		if(command.startsWith("JN")) {
 			char tempSF=SF;
-			System.out.println("SF "+(int)SF);
+			//System.out.println("SF "+(int)SF);
 			if((tempSF & 0b00000100) == 0b000000000) { // ZF=0
 				int posl = Integer.parseInt(command.substring(2,4),16);
 				PC=posl;
@@ -815,6 +827,20 @@ public class RM {
 		
 		
 		
+	}
+	
+	public String getNextCommand(VM vm) {
+		int tempPC=vm.getPC();
+		int cs = vm.getCS();
+		Word[][] vmMemory = vm.getMemory();
+		//System.out.println("Temp pc " + tempPC);
+		String nextCommand = vmMemory[(cs+tempPC)/16][(cs+tempPC)%16].toString();
+		if(nextCommand=="0000") {
+			return "END";
+		}
+		else {
+			return nextCommand;
+		}
 	}
 	
 	private void loadDataAsBytes(ArrayList<Word> words, int address, VM vm) {
