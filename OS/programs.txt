@@ -6,6 +6,7 @@ CODE
 LD00
 LD01
 CMP 
+JN00
 HALT
 *
 program2
@@ -16,5 +17,21 @@ CODE
 LD05
 LD10
 CMP
+HALT
+*
+
+program3
+DATA
+0 b "Iveskite skaiciu"
+5 b "Iveskite dar viena skaiciu"
+CODE
+PSH 10
+PR00
+IPSH
+PSH 1A
+PR05
+IPSH
+CMP
+JN00
 HALT
 *

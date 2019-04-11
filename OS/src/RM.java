@@ -102,10 +102,10 @@ public class RM {
 		CH = cH;
 	}
 	public void setCHByte(int position) {
-		CH[position]=1;
+		CH[position]='1';
 	}
 	public void unsetCHByte(int position) {
-		CH[position]=0;
+		CH[position]='0';
 	}
 
 	public char getSF() {
@@ -166,12 +166,17 @@ public class RM {
 		
 		case 4: {
 			// perkelt readinima
-			Word[][] vmMemory = vm.getMemory();
-			String command = vmMemory[vm.getPC()-1][vm.getPC()-1].toString();
-			SP--;
-			int stack = (int)SP;
-			int numberOfBytes= vmMemory[stack/16][stack%16].toInt();
+			MODE='1'; // supervizoriaus
 			
+			setCHByte((char)0);
+			Word[][] vmMemory = vm.getMemory();
+			int vmPC=vm.getPC();
+			String command = vmMemory[vm.getPC()][vm.getPC()].toString();
+			
+			int stack = (int)vm.getSP();
+			//stack--; // kodel?
+			int numberOfBytes= vmMemory[stack/16][stack%16].toInt();
+			stack--; // gal cia turetu buti?
 			int posl = Integer.parseInt(command.substring(2,4)); // 2 paskutiniai sk
 			int address = vm.getDS()+posl;
 			channelDevice.setSB(1);// kopijuojam pirma takeli// Zygimantas
@@ -183,31 +188,45 @@ public class RM {
 			loadDataAsBytes(readWords,address,vm);
 			SI=0;
 			unsetCHByte(0);
+			vm.setSP((char)stack);
+			SP=(char)stack;
+			decrTimer(3);
+			MODE='0';
+			
+			
+			
 			break;
 		}
 		case 5: {
 			// perkelt printinima
 			Word[][] vmMemory = vm.getMemory();
-			int stack = (int)SP;// Integer.parseInt(String.valueOf(SP),16);
+			int vmPC = vm.getPC();
+			MODE='1';
+			setCHByte((char)1);
+			int stack = (int)vm.getSP();// Integer.parseInt(String.valueOf(SP),16);
 			int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
-			String command = vmMemory[vm.getCS()+PC-1][vm.getCS()+PC-1].toString();
-			int posl = Integer.parseInt(command.substring(2,4));
+			stack--;
+			String command = vmMemory[(vmPC)/16][(vmPC)%16].toString();
+			System.out.println("komanda " + command);
+			int posl = Integer.parseInt(command.substring(2,4)); // posl/16 = blokas
 			char[] isvestis = new char[numberOfBytes];
 			int tempi=0;
-			int posl2=posl % 16;
+			//int posl2=posl % 16; // posl%16 = zodis
 			for (int i=0; i<numberOfBytes; i++) {
-				isvestis[i]=vmMemory[posl +vm.getDS()/16][posl2 + vm.getDS()%16].getByte(tempi);
+				isvestis[i]=vmMemory[(posl +vm.getDS())/16][(posl + vm.getDS())%16].getByte(tempi);
 				tempi++;
-					if(tempi==3) {
+					if(tempi==4) {
 						tempi=0;
 					}
-					if(posl2+1<16) {
-						posl2++; 
+					
+					if(tempi==0) {
+						posl++; 
 					}
-					else {
-						posl++;
-						posl2=0;
-					}
+					
+					//else {
+					//	posl++;
+					//	posl2=0;
+					//}
 			}
 			channelDevice.setSB(2);// kopijuojam antra takeli// Zygimantas
             channelDevice.setDB(2);// dedam i antra takeli// Zygimantas
@@ -216,15 +235,22 @@ public class RM {
             channelDevice.xchg(outputDevice, isvestis);// vykdomas duomenu pakeitimas// Zygimantas
 			//outputDevice.printBytes(isvestis);
 			SI=0;
-			unsetCHByte(1);
+			unsetCHByte((char)1);
+			SP=(char)stack;
+			vm.setSP((char)stack);
+			decrTimer(3);
 			//int startingPlace=Integer.parseInt(command.substring(2,4),16);
 			break;
 		}
 		case 6: {
 			// perkelt IPSH
+			MODE='1';
+			setCHByte((char)0);
 			Word[][] vmMemory = vm.getMemory();
-			SP++;
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			int vmPC=vm.getPC();
+			
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+			stack++;
 			channelDevice.setSB(1);// kopijuojam pirma takeli// Zygimantas
             channelDevice.setDB(1);// dedam i pirma takeli// Zygimantas
             channelDevice.setST(1);// is ivedimo irenginio// Zygimantas
@@ -232,30 +258,49 @@ public class RM {
             Word temp = channelDevice.xchg(inputDevice);// vykdomas duomenu pakeitimas// Zygimantas
 			//Word temp = inputDevice.readWord();
 			vmMemory[stack/16][stack%16] = temp;
-			unsetCHByte(0);
-			
+			unsetCHByte((char)0);
+			decrTimer(3);
+			vm.setSP((char)stack);
+			SP=(char)stack;
+			MODE='0';
+			SI=0;
 			break;
 		}
 		case 7: {
 			// perkelt PPOP
+			MODE='1';
+			setCHByte((char)1);
+			int vmPC= vm.getPC();
 			Word[][] vmMemory = vm.getMemory();
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16)
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16)
 			channelDevice.setSB(2);// kopijuojam antra takeli// Zygimantas
             channelDevice.setDB(2);// dedam i antra takeli// Zygimantas
             channelDevice.setST(1);// is ivedimo irenginio// Zygimantas
             channelDevice.setDT(4);// i vartotojo atminti (steka)// Zygimantas
             channelDevice.xchg(outputDevice, vmMemory, stack);// vykdomas duomenu pakeitimas;
 			//outputDevice.printWord(vmMemory[stack/16][stack%16]);
-			SP--;
+            stack--;
+            
+            
+			vm.setSP((char)stack);
+			SP = (char)stack;
+			decrTimer(3);
+			
+			MODE='0';
 			SI=0;
-			unsetCHByte(1);
+			unsetCHByte((char)1);
 			break;
 			
 		}
 		case 8: {
 			// LCxy
+			MODE='1';
+			int vmPC = vm.getPC();
 			boolean blokavimas =manager.LC(this,vm);
 			if(blokavimas==true) { // jei pavyko
+				
+				MODE = '0';
+				decrTimer(1);
 				break;
 			}
 			else {
@@ -264,8 +309,13 @@ public class RM {
 		}
 		case 9: {
 			// UCx
+			MODE = '1';
+			int vmPC = vm.getPC();
+			
 			boolean atblokavimas = manager.UC(this,vm);
 			if(atblokavimas==true) { // jei pavyko
+				MODE='0';
+				decrTimer(1);
 				break;
 			}
 			else {
@@ -276,6 +326,7 @@ public class RM {
 			//this.SI=0;
 			//this.PI=0;
 			//this.TI=10; // uzdet koki reset metoda 
+			//decrTimer(1); // reikia?
 			return 1; // HALT
 		}
 		case 11: {
@@ -290,7 +341,7 @@ public class RM {
 	public RM() {
 		CH = new char[] {'0','0','0'};
 		PTR = new Word();
-		SF = '0';
+		SF = 0;
 		TI=10;
 		lastCreatedVm=0; 
 		MODE = '0';
@@ -309,10 +360,12 @@ public class RM {
 		channelDevice = new ChannelDevice();
 	}
 	
-	public VM loadProgram(File file, String program) {
+	public VM createAndLoadVirtualMachine() {
 		VM vm = new VM();
+		// suteikiam vm numeri
 		this.lastCreatedVm+=1;
-		vm.setVmIndex(lastCreatedVm); // suteikiam vm numeri
+		vm.setVmIndex(lastCreatedVm);
+		
 		int pagingBlock = new Random().nextInt(60); // 4 paskutiniai blokai uzimti bendrai atminciai ir jos info
 		System.out.println("Isskirta puslapiu lentele su PTR: " + pagingBlock);
 		int allocatedBlocks=0;
@@ -355,7 +408,11 @@ public class RM {
 				vm.assignMemoryBlock(this, currentVirtualBlock, currentRealBlock);
 				currentVirtualBlock++; // priskiriu blokus bet galbut reiktu atskirai zodzius bus matyt kaip veiks
 			}
-			
+			return vm;
+	}
+	
+	public boolean loadProgram(File file, String program,VM vm) {
+		
 			try {
 				//parser.hasParsedCode=false;
 				//parser.parsedDataGracefully=false;
@@ -363,13 +420,16 @@ public class RM {
 				
 				this.PC=vm.getPC(); // vel nzn cia gal turi buti PC kur reali masina rodo
 				this.SF= vm.getSF();
+				System.out.println("SF"+(int)vm.getSF());
 				this.SP = vm.getSP();
+				return true;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+				//vm=null;
 				e.printStackTrace();
-				 return null;
+				 return false;
 			}
-		return vm;	
+			
 		
 	}
 	
@@ -396,9 +456,10 @@ public class RM {
 	}
 	
 	public String processCommand(VM vm) { // return processed command
-		int startingAddress = (int)vm.getCS()+(int)PC;
+		//int startingAddress = (int)vm.getPC(); //(int)vm.getCS()+(int)PC;
 		Word[][] vmMemory = vm.getMemory(); // gauname subindinta puslapiu mechanizmu virtualia atminti
-		Word startingPosition = vmMemory[startingAddress/16][startingAddress%16];   // TODO memory atskira parasyti klase su metodais manau
+		int vmPC = (int)vm.getPC();
+		Word startingPosition = vmMemory[vmPC/16][vmPC%16];   // TODO memory atskira parasyti klase su metodais manau
 		//System.out.println("startingAddress " +startingAddress);
 		//if(rm.getSI()==7) { // programos pabaigos kodas is karto kazin ar false reikia
 		//	
@@ -407,8 +468,8 @@ public class RM {
 		String command = String.valueOf(startingPosition.getBytes());
 		switch (command) {
 			case "ADD ": {  // arba pakeisti kad visos butu 4 daliklio ilgumo 
-				PC++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				vmPC++;
+				int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
@@ -422,18 +483,24 @@ public class RM {
 					CF= true;
 					OF= true; 
 				}
-				setSF(CF,ZF,OF);
+				vm.setSF(CF,ZF,OF);
 				
 				Word toPut = new Word(Integer.toHexString(suma).toCharArray());
 				memory[(stack-1)/16][(stack-1)%16]=toPut;
-				SP--;	
+				stack--;
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				PC=vmPC;
+				SP=(char)stack;
+				SF= vm.getSF();
+				decrTimer(1);
 				
 				return command;
 			}
 				
 			case "SUB ": {
-				PC++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				vmPC++;
+				int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
@@ -449,16 +516,23 @@ public class RM {
 				if(skirtumas > antras.toInt()) {
 					OF=true;
 				}
-				setSF(CF,ZF,OF);
+				vm.setSF(CF,ZF,OF);
 				
 				Word toPut = new Word(Integer.toHexString(skirtumas).toCharArray());
 				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
-				SP--;	
+				
+				stack--;
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				SP=(char)stack;
+				SF=vm.getSF();
+				PC=vmPC;
+				decrTimer(1);
 				return command;
 			}
 			case "MUL ": {
-				PC++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				vmPC++;
+				int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
@@ -473,17 +547,23 @@ public class RM {
 					 
 				}
 				
-				setSF(CF,ZF,OF);
+				vm.setSF(CF,ZF,OF);
 				
 				Word toPut = new Word(Integer.toHexString(sandauga).toCharArray());
 				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
-				SP--;	
+				stack--;
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				SP=(char)stack;
+				SF=vm.getSF();
+				PC=vmPC;
+				decrTimer(1);
 				return command;
 				
 			}
 			case "DIV ": {
-				PC++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				vmPC++;
+				int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
@@ -498,58 +578,85 @@ public class RM {
 					 
 				}
 				
-				setSF(CF,ZF,OF);
+				vm.setSF(CF,ZF,OF);
 				
 				Word toPut = new Word(Integer.toHexString(dalyba).toCharArray());
 				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
-				SP--;	
+				stack--;
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				SP=(char)stack;
+				SF=vm.getSF();
+				PC=vmPC;
+				decrTimer(1);
 				return command;
 			}
 			case "CMP ": {
-				PC++;
-				int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+				vmPC++;
+				int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
 				boolean CF=false,OF=false,ZF = false;
+				System.out.println("antras" + antras.toInt());
+				System.out.println("pirmas" +pirmas.toInt());
 				if(antras.toInt()==pirmas.toInt()) {
+					System.out.println("Lygus");
 					ZF=true;
 				}
 				if(antras.toInt()<pirmas.toInt()) {
 					CF=true;
 				}
 				/// TODO kiekvienoj komandoj timeri decrementint
-				setSF(CF,ZF,OF);
+				vm.setSF(CF,ZF,OF);
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				SP=(char)stack;
+				SF=vm.getSF();
+				PC=vmPC;
+				decrTimer(1);
 				return command;
 			}
 			
 			case "PSH ": {
-				PC++; // nes sekantis zodis argumentas skaicius
-				String skaicius = vmMemory[(vm.getCS()+PC)/16][(vm.getCS()+PC)%16].toString(); // grazina hex string
+				vmPC++; // nes sekantis zodis argumentas skaicius
+				String skaicius = vmMemory[(vmPC)/16][(vmPC)%16].toString(); // grazina hex string
 				command.concat(skaicius);
-				SP++;
-				int stack = (int) SP;//Integer.parseInt(String.valueOf(SP),16);
-				vmMemory[stack/16][stack%16]=memory[(vm.getCS()+PC)/16][(vm.getCS()+PC)%16];
-				PC++; // prieiti prie kitos komandos
+				int stack = (int) vm.getSP();
+				stack++;
+				
+				//Integer.parseInt(String.valueOf(SP),16);
+				vmMemory[stack/16][stack%16]=vmMemory[(vmPC)/16][(vmPC)%16];
+				vmPC++; // prieiti prie kitos komandos
+				vm.setSP((char)stack);
+				vm.setPC(vmPC);
+				SP=(char)stack;
+				PC=vmPC;
+				decrTimer(1);
 				//number
 				return command;
 				
 			}
 			
 			case "PPOP": {
-				setMODE('1');
+				//setMODE('1');
 				setSI(4);
-				setCHByte(1); // 2asis channel (nuo nulio skaiciuojame)
-				PC++;
+				vmPC++;
 				vm.setPC(PC);
+				PC=vmPC;
+				//setCHByte(1); // 2asis channel (nuo nulio skaiciuojame)
 				return command;
 				
 			}
 			
 			case "IPSH": {
-				setMODE('1');
+				//setMODE('1');
 				setSI(3);
-				setCHByte(0);
+				vmPC++;
+				vm.setPC(vmPC);
+				
+				PC=vmPC;
+				//setCHByte(0);
 				
 				//SP++;
 				//int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
@@ -589,7 +696,7 @@ public class RM {
 				setSI(7);
 				// decr timer 
 				// pertraukimas
-				PC++;
+				//PC++;
 				return command;
 			}
 				
@@ -597,50 +704,68 @@ public class RM {
 		}
 		
 		if(command.startsWith("WR")) {
-			PC++;
+			vmPC++;
 			int sharedBlockNr=Integer.parseInt(command.substring(2, 3));
 			int sharedBlockWord = Integer.parseInt(command.substring(3,4));
 			// TODO patikrinimas su RM ar uzrakintas blokas su numeriu sharedBlockNr
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 			//Word[][] rmMemory=rm.getMemory();
 			int address=(60+sharedBlockNr-1)*16+(sharedBlockWord-1);
 			memory[address/16][address%16]= vmMemory[stack/16][stack%16];
-			SP--;// ? ar reikia?
+			stack--;// ? ar reikia?
+			
+			vm.setPC(vmPC);
+			vm.setSP((char)stack);
+			PC=vmPC;
+			SP=(char)stack;
+			decrTimer(1);
 			return command;
 		}
 		
 		if(command.startsWith("RD")) {
-			PC++;
+			vmPC++;
 			int sharedBlockNr=Integer.parseInt(command.substring(2, 3));
 			int sharedBlockWord = Integer.parseInt(command.substring(3,4));
 			// TODO patikrinimas su RM ar uzrakintas blokas su numeriu sharedBlockNr
-			SP++;// ? ar reikia?
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+			stack++;// ? ar reikia?
 			//Word[][] rmMemory=rm.getMemory();
 			int address=(60+sharedBlockNr-1)*16+(sharedBlockWord-1); // ta 60 kazkaip apsirasyt reiktu aka kur prasideda bendra atmintis
 			vmMemory[stack/16][stack%16]= memory[address/16][address%16];
+			vm.setPC(vmPC);
+			vm.setSP((char)stack);
+			PC=vmPC;
+			SP=(char)stack;
+			decrTimer(1);
 			return command;
 		}
 		
 		if(command.startsWith("LC")) {
-			setMODE('1'); // supervisor mode
+			//setMODE('1'); // supervisor mode
 			setSI(5); // LC pertraukimas lock bendra atminti
+			vmPC++;
+			PC=vmPC;
+			vm.setPC(vmPC);
 			//int sharedBlockNr = Integer.parseInt(command.substring(2, 3));
 			//rm.getManager().setBlockNr(sharedBlockNr);
 			//getManager().setVmIndex(vm.getVmIndex());
 			// vm numerio komandoje nebera int vmNumber = Integer.parseInt(command.substring(3, 4)); // arba taip arba kazkoki turet auto nr priskyreja nereiktu i komanda rasyt
-			PC++;
-			vm.setPC(PC);
+			//PC++;
+			//vm.setPC(PC);
 			//command.concat(Integer.toString(vm.getVmIndex())); // gale bus nr vm
 			return command;
 		}
 		
 		if(command.startsWith("UC")) {
-			setMODE('1');
+			//setMODE('1');
 			setSI(6);
+			vmPC++;
+			PC=vmPC;
+			vm.setPC(vmPC);
 			//getManager().set
-			PC++;
-			vm.setPC(PC);
+			//PC++;
+			//vm.setPC(PC);
 			//int sharedBlockNr = Integer.parseInt(command.substring(2, 3));
 			//int vmNumber = vm.getVmIndex();// kuriant vm sugeneruoti
 			//Word[][] rmMemory=rm.getMemory();
@@ -665,23 +790,29 @@ public class RM {
 			int poslinkis = Integer.parseInt(stringAddress,16);
 			int dsValue = (int)vm.getDS();
 			//SP= vm.getSP();
-			SP++;
+			
 			//vm.setSP(SP);
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+			stack++;
 			
 			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
+				vm.setSP((char)0xE0);
 				SP=0xE0;
 				stack=SP;
 			}
 			if(stack<223) { // nelabai reikia nes neatimineja cia SP
+				vm.setSP((char)0xFF);
 				SP=0xFF;
 				stack=SP;
 			}
 			//System.out.println(" Stack: " +stack);
 			vmMemory[stack/16][stack%16]=vmMemory[dsValue+poslinkis/16][dsValue+poslinkis%16]; 
-			PC++;
-			vm.setPC(PC);
-			vm.setSP(SP);
+			vmPC++;
+			vm.setPC(vmPC);
+			vm.setSP((char)stack);
+			PC=vmPC;
+			SP=(char)stack;
+			decrTimer(1);
 			return command;
 		}
 		
@@ -689,75 +820,121 @@ public class RM {
 			String stringAddress = command.substring(2,4);
 			int address = Integer.parseInt(stringAddress,16);
 			int dsValue = (int)vm.getDS();
-			int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
+			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
 			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
+				vm.setSP((char)0xE0);
 				SP=0xE0;
 				stack=SP;
 			}
 			if(stack/16<=14) {
+				vm.setSP((char)0xFF);
 				SP=0xFF;
 				stack=SP;
 			}
 			vmMemory[dsValue+address/16][dsValue+address%16]=vmMemory[stack/16][stack/16];
-			SP--;
-			PC++;
-			vm.setPC(PC);
-			vm.setSP(SP); /// gal atvirksciai? keiciam virtualios ir gale nustatom realios turbut taip ir geriau bus reiks pakeist
+			stack--;
+			vmPC++;
+			vm.setPC(vmPC);
+			vm.setSP((char)stack);
+			PC=vmPC;
+			SP=(char)stack;
+			 /// gal atvirksciai? keiciam virtualios ir gale nustatom realios turbut taip ir geriau bus reiks pakeist
 			
 			return command;
 		}
 		
 		if(command.startsWith("JP")) {
 			int posl = Integer.parseInt(command.substring(2,4),16); // nera tikrinimo geru reiksmiu 
-			PC=posl;
+			int cs = (int)vm.getCS();
+			vmPC=posl+cs;
+			vm.setPC(vmPC);
+			PC=vmPC;
+			decrTimer(1);
 			return command;
 		}
 		if(command.startsWith("JE")){
-			char tempSF=SF;
-			if ((tempSF & 0b00000100) == 0b00000100){ // ZF=1
+			int cs = (int)vm.getCS();
+			char tempSF=vm.getSF();
+			if ((tempSF & 0b00000010) == 0b00000010){ // ZF=1
 				int posl = Integer.parseInt(command.substring(2,4),16);
-				PC=posl;
+				vmPC=posl+cs;
+				
 			}
+			else {
+				vmPC++;
+				
+			}
+			vm.setPC(vmPC);
+			PC=vmPC;
+			decrTimer(1);
 			return command;
 		}
 		if(command.startsWith("JB")) {
-			char tempSF=SF;
-			if((tempSF & 0b00000001) == 0b000000001) { // CF=1
+			int cs = (int)vm.getCS();
+			char tempSF=vm.getSF();
+			if((tempSF & 0b00000100) == 0b0000000100) { // CF=1
 				int posl = Integer.parseInt(command.substring(2,4),16);
-				PC=posl; // DS+posl;
+				vmPC=posl+cs;
+				
 				
 			
 			}
+			else {
+				vmPC++;
+			}
+			vm.setPC(vmPC);
+			PC=vmPC;
+			decrTimer(1);
 			return command;
 		}
 		if(command.startsWith("JA")){ // ZF = 0 and CF = 0
-			char tempSF=SF;
-			if((tempSF & 0b00000101) == 0b000000000) {
+			int cs = (int)vm.getCS();
+			char tempSF=vm.getSF();
+			if((tempSF & 0b00000110) == 0b000000000) {
 				int posl = Integer.parseInt(command.substring(2,4),16);
-				PC=posl;
+				vmPC=posl+cs;
+				
 				
 				
 			}
+			else {
+				vmPC++;
+			}
+			vm.setPC(vmPC);
+			PC=vmPC;
+			decrTimer(1);
+			
 			return command;
 		}
 		if(command.startsWith("JN")) {
-			char tempSF=SF;
+			int cs = (int)vm.getCS();
+			char tempSF=vm.getSF();
 			//System.out.println("SF "+(int)SF);
-			if((tempSF & 0b00000100) == 0b000000000) { // ZF=0
+			if((tempSF & 0b00000010) == 0b000000000) { // ZF=0
 				int posl = Integer.parseInt(command.substring(2,4),16);
-				PC=posl;
-				
+				vmPC=posl+cs;
 				
 			}
+			else {
+				vmPC++;
+			}
+			vm.setPC(vmPC);
+			PC=vmPC;
+			decrTimer(1);
 			return command;
 		}
 		
 		if(command.startsWith("RI")) {
+			
+			
 			//int dsValue = (int)vm.getDS();
-			setMODE('1'); // supervizoriaus
+			//setMODE('1'); // supervizoriaus
 			// kolkas skaitymas cia bet reiks perkelti prie RM
 			setSI(1);
-			setCHByte(0); // uzsetinam 1-a channel skaiciuojam 0
+			vmPC++;
+			vm.setPC(vmPC);
+			PC=vmPC;
+			//setCHByte(0); // uzsetinam 1-a channel skaiciuojam 0
 			//int stack = (int)SP;//Integer.parseInt(String.valueOf(SP),16);
 			//int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
 			//SP--;
@@ -809,8 +986,8 @@ public class RM {
 			
 		//	setSI(0);
 		//	unsetCHByte(0); // uzsetinam 0lini channel
-			PC++;
-			vm.setPC(PC);
+			//PC++;
+			//vm.setPC(PC);
 			
 			return command;
 			
@@ -818,9 +995,12 @@ public class RM {
 		
 		if(command.startsWith("PR")) {
 			//int dsValue = (int)vm.getDS();
-			setMODE('1');
+			//setMODE('1');
 			setSI(2);
-			setCHByte(1);
+			vmPC++;
+			vm.setPC(vmPC);
+			PC=vmPC;
+			//setCHByte(1);
 			//int stack = (int)SP;// Integer.parseInt(String.valueOf(SP),16);
 			//int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
 			//int startingPlace=Integer.parseInt(command.substring(2,4),16);
@@ -851,10 +1031,10 @@ public class RM {
 	
 	public String getNextCommand(VM vm) {
 		int tempPC=vm.getPC();
-		int cs = vm.getCS();
+		//int cs = vm.getCS();
 		Word[][] vmMemory = vm.getMemory();
 		//System.out.println("Temp pc " + tempPC);
-		String nextCommand = vmMemory[(cs+tempPC)/16][(cs+tempPC)%16].toString();
+		String nextCommand = vmMemory[(tempPC)/16][(tempPC)%16].toString();
 		if(nextCommand=="0000") {
 			return "END";
 		}
@@ -877,11 +1057,16 @@ public class RM {
 		
 	}
 	
-	private void setSF(boolean CF, boolean ZF, boolean OF) {
-		SF = (char) (CF==true ? (SF | (1 << 0)) : (SF & ~(1 << 0)));
-		SF = (char) (ZF==true ? (SF | (1 << 1)) : (SF & ~(1 << 1)));
-		SF = (char) (OF==true ? (SF | (1 << 2)) : (SF & ~(1 << 2)));
+	
+	public void decrTimer(int decr) {
+		if(decr>=TI) {
+			TI=0;
+		}
+		else {
+			TI=TI-decr;
+		}
 	}
+	
 	/*
 	public static void main(String args[]) {
 		String test = "HALT";

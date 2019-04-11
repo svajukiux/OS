@@ -37,7 +37,7 @@ public class VM {
 		SP=0xDF; // top = -1
 		DS=0x00;
 		CS=0x70;
-		PC=0; //  i CS pakeisti reike visur 
+		PC=(int)CS; //  i CS pakeisti reike visur 
 		SF=0;
 		
 		//System.out.println("DS: " +DS);
@@ -111,5 +111,10 @@ public class VM {
 		this.memory[virtualNumber]=realMemory[realNumber];
 	}
 	
+	public void setSF(boolean CF, boolean ZF, boolean OF) {
+		SF = (char) (CF==true ? (SF | (1 << 0)) : (SF & ~(1 << 0)));
+		SF = (char) (ZF==true ? (SF | (1 << 1)) : (SF & ~(1 << 1)));
+		SF = (char) (OF==true ? (SF | (1 << 2)) : (SF & ~(1 << 2)));
+	}
 
 }

@@ -7,9 +7,11 @@ public class InteractiveOS {
 	
 	public static void main(String[] args) {
 		// pati pradzia sukuria RM
-		System.out.println("Kuriama RM");
+		
 		RM rm = new RM();
-		VM vm=null;
+		System.out.println("Kuriama VM");
+		VM vm=rm.createAndLoadVirtualMachine();
+		System.out.println("Sukurta");
 		// tada galimybes:
 		//1. uzloadinti programa
 		//2. paleisti programa
@@ -19,7 +21,7 @@ public class InteractiveOS {
 		// ofc pirma reikia uzloadinti. Tada:
 		// 1. paima faila
 		boolean running =true;
-		System.out.println("RealMachine created. Available commands:");
+		System.out.println("Virtual Machine created. Available commands:");
 		System.out.println("\"load program\" command to load a program. You will be asked for a number");
 		System.out.println("\"run\" loads program");
 		System.out.println("\"step\" executes one step only");
@@ -32,18 +34,21 @@ public class InteractiveOS {
 		//TODO kai bus failo struktura kitokia prasysi ivesti programos numeri kuria uzloadint
 		//2. sukuria VM
 		Scanner scanner = new Scanner(System.in);
+		boolean success =false;
 		
 		while (running) {
 			System.out.print("command: ");
 			String input = scanner.nextLine();
 			String command = "Unknown";
 			
+			
 			switch(input) {
 			case "load program":
-				if(vm!=null) {
-					cleanBeforeDeleting(vm);
-				}
-				vm=null;
+				//if(vm!=null) {
+					clean(vm);
+					clean(rm);
+				//}
+				//vm=null;
 				System.out.println("Please insert program number");
 				int programNumber = scanner.nextInt();
 				scanner.nextLine();
@@ -52,9 +57,9 @@ public class InteractiveOS {
 				System.out.println("Kuriama VM");
 				//VM vm = new VM();
 				
-				System.out.println("Uznkraunama VM"); // manau reikia laodint kartu kai pasirenki faila taip ir darom nvm failas vm kurimas programos uzloadinimas
-				vm =rm.loadProgram(file,program);
-				if(vm!=null) {
+				System.out.println("Uznkraunama programa"); // manau reikia laodint kartu kai pasirenki faila taip ir darom nvm failas vm kurimas programos uzloadinimas
+				success = rm.loadProgram(file,program,vm);
+				if(success==true) {
 					System.out.println("Programa uzkrauta");
 					command = rm.getNextCommand(vm);
 					System.out.println("Next Command: " +command);
@@ -68,7 +73,7 @@ public class InteractiveOS {
 				break;
 			
 			case "run":
-				if(vm==null) {
+				if(success==false) {
 					System.out.println("VM not yet created");
 				} 
 				else {
@@ -104,7 +109,7 @@ public class InteractiveOS {
 							//Word[][] memory = vm.getMemory();
 							printRegisters(rm);
 							printRegisters(vm);
-							printChannelStates(rm);
+							//printChannelStates(rm);
 							printMemory(vm);
 							System.out.println("End ");
 							break;
@@ -124,14 +129,14 @@ public class InteractiveOS {
 					
 				}
 				else {
-					rm.setMODE('1'); // reiks issimt nes cia negaliu keitaliot rm lol
+					//rm.setMODE('1'); // reiks issimt nes cia negaliu keitaliot rm lol
 					if(rm.processInterrupt(vm)==1) {
 						System.out.println("Program End");
 					}
 				}
 				printRegisters(rm);
 				printRegisters(vm);
-				printChannelStates(rm);
+				//printChannelStates(rm);
 				printMemory(vm);
 				command = rm.getNextCommand(vm);
 				System.out.println("Next Command: " +command);
@@ -259,7 +264,10 @@ public class InteractiveOS {
 		
 	}
 	
-	public static void cleanBeforeDeleting(VM vm) {
+	public static void clean(VM vm) {
+		vm.setPC((int)vm.getCS());
+		vm.setSP((char)0xDF);
+		vm.setSF((char)0);
 		Word[][] vmMemory = vm.getMemory();
 		for(int i=0; i<16; i++) {
 			for(int j=0; j<16; j++) {
@@ -271,11 +279,20 @@ public class InteractiveOS {
 			}
 		}
 	}
-	
+	public static void clean(RM rm) {
+		rm.setSI(0);
+		rm.setPI(0);
+		rm.setMODE((char)0);
+		rm.setTI(10);
+		rm.setCH(new char[] {'0','0','0'});
+		
+	}
+	/*
 	public static void printChannelStates(RM rm) {
 		char [] channels= rm.getCH();
 		String busena = "Neaktyvus";
-		if(channels[0]=='1') {
+		int siValue= (int)rm.getSI();
+		if(int)rm.getSI()=='1') {
 			busena = "Aktyvus";
 		}
 		System.out.println("Ivesties irenginys    "+ busena);
@@ -287,6 +304,7 @@ public class InteractiveOS {
 		}
 		System.out.println("Isvesties irenginys    "+ busena);
 	}
+	*/
 	
 	}
 	

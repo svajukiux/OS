@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ProgramParser {
 	boolean parsedDataGracefully;
@@ -25,12 +26,12 @@ public class ProgramParser {
 		//boolean isDataParsed=false;
 		
 		while(!program.equals(line=br.readLine())) {
-			System.out.println("why" +line);
+			//System.out.println("why" +line);
 			continue;
 		}
 		
 		while((line = br.readLine()) !=null && hasParsedCode==false) {
-			System.out.println("wtf"+line);
+			//System.out.println("wtf"+line);
 			if(line.equalsIgnoreCase("DATA")) {
 				parseData(br,vm);
 				//isDataParsed=true;
@@ -61,32 +62,38 @@ public class ProgramParser {
 		//int dataWords =0; // kolkas nezinau kam
 		
 		while(((line = br.readLine())!=null)) {
-			if(line.equalsIgnoreCase("CODE")){
+			if(line.startsWith("CODE")){
+				
 				//commands.add("[STC]"); // pasiekem code segment
 				System.out.println("STC");
 				parsedDataGracefully = true; // galim eit code segmen parsinima
 				return;
 			}
 			
-			String [] allSplits = line.split(" ", 0);
+			String [] allSplits = line.split(" ",3);
+			
 			int poslinkis = Integer.parseInt(allSplits[0],16); // poslinkis nuo data segmento pradzios in hex
 			int currentAddress= vm.getDS()+poslinkis; 
 			boolean arZodis = allSplits[1].equalsIgnoreCase("w"); // if word
-			String data[] = allSplits[2].split(",",0); // grazins 1 ir 2 pvz arba stringus atskirtus
+			String data[] = allSplits[2].split(","); // grazins 1 ir 2 pvz arba stringus atskirtus
+			//System.out.println("data"+Arrays.toString(data));
 			// jauciu reikia hashset data ir poslinkiui kad kartu butu
 			for(int i=0; i<data.length; i++) {
 				data[i].trim();
 			}
+			System.out.println("data"+Arrays.toString(data));
 			
 				ArrayList<Word> rawData = new ArrayList<Word>(); //raw data of char arrays
 				for(int i=0; i<data.length; i++) {
 					if(data[i].contains("\"")) { // ar stringas
+						data[i]=data[i].substring(1, data[i].length()-1);
 							//char charData[] = data[i].toCharArray(); // not tested
 							//for(int j=0; j<charData.length; j++) {
 							//	rawData.add(charData[j]);
 							//}
-						
+							
 							int length=data[i].length();
+							
 							int lenghtCopied=0;
 							//for(int j=0; j<data[i].length(); j++) {
 							while(length>=4) {
@@ -94,6 +101,7 @@ public class ProgramParser {
 								rawData.add(temp);
 								lenghtCopied+=4;
 								length-=4;
+								System.out.println("Zodziai" +temp.toString());
 							}
 							
 							if(length!=0 && length<4) { // jei maziau nei 4 baitai
@@ -254,8 +262,10 @@ public class ProgramParser {
 				if(currentByte!='\u0000') {
 					vm.getMemory()[address/16][address%16].setByte(j,currentByte);
 				}
+		        // else galima idet kad idetu tarpus
 				
 			}
+			address++;
 		}
 		
 	}

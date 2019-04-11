@@ -66,7 +66,7 @@ public class SharedMemoryManager {
 	public boolean LC(RM rm, VM vm) {
 		Word[][] rmMemory = rm.getMemory();
 		Word[][] vmMemory = vm.getMemory();
-		Word command = vmMemory[vm.getPC()-1/16][vm.getPC()%16];
+		Word command = vmMemory[vm.getPC()/16][vm.getPC()%16];
 		vmIndex= vm.getVmIndex();
 		blockNr= Integer.parseInt(command.toString().substring(2,3));
 		if(rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].toInt()==0) { // 63 reiktu turbut while nes juk turetu laukti kol atsiblokuos
@@ -93,7 +93,7 @@ public class SharedMemoryManager {
 		
 		Word[][] rmMemory = rm.getMemory();
 		Word[][] vmMemory = vm.getMemory();
-		Word command = vmMemory[vm.getPC()-1/16][vm.getPC()%16];
+		Word command = vmMemory[vm.getPC()/16][vm.getPC()%16];
 		vmIndex= vm.getVmIndex();
 		blockNr= Integer.parseInt(command.toString().substring(2,3));
 		
