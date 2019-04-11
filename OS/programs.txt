@@ -1,0 +1,20 @@
+program1
+DATA
+0 w 1
+1 w 2
+CODE
+LD00
+LD01
+CMP 
+HALT
+*
+program2
+DATA
+5 W 5
+10 w 6
+CODE
+LD05
+LD10
+CMP
+HALT
+*
