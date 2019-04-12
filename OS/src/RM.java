@@ -129,6 +129,8 @@ public class RM {
 			case 1: return 1; // memory access interrupt
 			case 2: return 2; // bad operation code
 			case 3: return 3; // bad assign
+			case 4: return 12; // bendros atminties pazeidimas
+			
 		}
 		switch(SI) {
 		case 1: return 4; // command RIx1x2
@@ -171,13 +173,37 @@ public class RM {
 			setCHByte((char)0);
 			Word[][] vmMemory = vm.getMemory();
 			int vmPC=vm.getPC();
-			String command = vmMemory[vm.getPC()][vm.getPC()].toString();
+			String command = vmMemory[(vm.getPC()-1)/16][(vm.getPC()-1)%16].toString();
+			String stringPosl=command.substring(2,4);
 			
-			int stack = (int)vm.getSP();
+			
 			//stack--; // kodel?
+			
+			 // 2 paskutiniai sk
+			for(int i=0; i<2; i++) {
+				if(stringPosl.charAt(i)<'0' || stringPosl.charAt(i)>'F' || (stringPosl.charAt(i)>'9' && stringPosl.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					//break;
+					return 0;
+				}
+			}
+			int posl = Integer.parseInt(command.substring(2,4),16);
+			if(posl>=0x70 || posl <0) {
+				setPI(1);
+				vmPC++;
+				vm.setPC(vmPC);
+				PC=vmPC;
+				decrTimer(1);
+				return 0;
+			}
+			int stack = (int)vm.getSP();
 			int numberOfBytes= vmMemory[stack/16][stack%16].toInt();
 			stack--; // gal cia turetu buti?
-			int posl = Integer.parseInt(command.substring(2,4)); // 2 paskutiniai sk
+			
 			int address = vm.getDS()+posl;
 			channelDevice.setSB(1);// kopijuojam pirma takeli// Zygimantas
             channelDevice.setDB(1);// dedam i pirma takeli// Zygimantas
@@ -185,6 +211,9 @@ public class RM {
             channelDevice.setDT(4);// i vartotojo atminti (steka)// Zygimantas
 			//ArrayList <Word> readWords = inputDevice.readBytes(numberOfBytes);
             ArrayList <Word> readWords = channelDevice.xchg(inputDevice, numberOfBytes);// vykdomas duomenu pakeitimas// Zygimantas
+            for(int i=0; i<readWords.size(); i++) {
+            	System.out.println("word " + readWords.get(i));
+            }
 			loadDataAsBytes(readWords,address,vm);
 			SI=0;
 			unsetCHByte(0);
@@ -203,12 +232,36 @@ public class RM {
 			int vmPC = vm.getPC();
 			MODE='1';
 			setCHByte((char)1);
+			
+			
+			String command = vmMemory[(vmPC-1)/16][(vmPC-1)%16].toString();
+			String stringPosl = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringPosl.charAt(i)<'0' || stringPosl.charAt(i)>'F' || (stringPosl.charAt(i)>'9' && stringPosl.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					//break;
+					return 0;
+				}
+			}
+			int posl = Integer.parseInt(command.substring(2,4),16); // posl/16 = blokas
+			if(posl>=0x70 || posl <0) {
+				setPI(1);
+				vmPC++;
+				vm.setPC(vmPC);
+				PC=vmPC;
+				decrTimer(1);
+				return 0;
+			}
 			int stack = (int)vm.getSP();// Integer.parseInt(String.valueOf(SP),16);
 			int numberOfBytes = vmMemory[stack/16][stack%16].toInt();
 			stack--;
-			String command = vmMemory[(vmPC)/16][(vmPC)%16].toString();
-			System.out.println("komanda " + command);
-			int posl = Integer.parseInt(command.substring(2,4)); // posl/16 = blokas
+			
+			//System.out.println("komanda " + command);
+			
 			char[] isvestis = new char[numberOfBytes];
 			int tempi=0;
 			//int posl2=posl % 16; // posl%16 = zodis
@@ -268,6 +321,7 @@ public class RM {
 		}
 		case 7: {
 			// perkelt PPOP
+			
 			MODE='1';
 			setCHByte((char)1);
 			int vmPC= vm.getPC();
@@ -332,6 +386,11 @@ public class RM {
 		case 11: {
 			TI=10; // reset TI
 			break;
+		}
+		case 12: {
+			System.out.println("Bendros atminties pazeidimas");
+			return 1;
+			
 		}
 		
 		}
@@ -484,9 +543,15 @@ public class RM {
 					OF= true; 
 				}
 				vm.setSF(CF,ZF,OF);
-				
-				Word toPut = new Word(Integer.toHexString(suma).toCharArray());
-				memory[(stack-1)/16][(stack-1)%16]=toPut;
+				Word toPut = new Word();
+				int numberIndex=3;
+				String result = Integer.toHexString(suma);
+				for(int i=result.length()-1; i>=0; i--) {
+					toPut.setByte(numberIndex,result.charAt(i));
+					numberIndex--;
+				}
+				//toPut = new Word(Integer.toHexString(suma).toCharArray());
+				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
 				stack--;
 				vm.setSP((char)stack);
 				vm.setPC(vmPC);
@@ -517,8 +582,17 @@ public class RM {
 					OF=true;
 				}
 				vm.setSF(CF,ZF,OF);
-				
-				Word toPut = new Word(Integer.toHexString(skirtumas).toCharArray());
+				Word toPut = new Word();
+				String result = Integer.toHexString(skirtumas);
+				if(skirtumas<0) {
+					result =result.substring(4,8);
+				}
+				int numberIndex=3;
+				for(int i=result.length()-1; i>=0; i--) {
+					toPut.setByte(numberIndex,result.charAt(i));
+					numberIndex--;
+				}
+				//Word toPut = new Word(Integer.toHexString(skirtumas).toCharArray());
 				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
 				
 				stack--;
@@ -547,9 +621,23 @@ public class RM {
 					 
 				}
 				
+				Word toPut = new Word();
+				String result = Integer.toHexString(sandauga);
+				
+				if(sandauga>0xFFFF) {
+					setPI(3);
+					System.out.println("Gautas didelis skaicius");
+					return command;
+				}
+				int numberIndex=3;
+				for(int i=result.length()-1; i>=0; i--) {
+					toPut.setByte(numberIndex,result.charAt(i));
+					numberIndex--;
+				}
+				
 				vm.setSF(CF,ZF,OF);
 				
-				Word toPut = new Word(Integer.toHexString(sandauga).toCharArray());
+				//Word toPut = new Word(Integer.toHexString(sandauga).toCharArray());
 				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
 				stack--;
 				vm.setSP((char)stack);
@@ -567,22 +655,40 @@ public class RM {
 				//int stackAddress = Integer.parseInt(String.valueOf(SP));
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
-				int dalyba = antras.toInt() / pirmas.toInt();
-				boolean CF=false,OF=false,ZF = false;
-				if(dalyba==0) {
-					ZF=true;
-				}
-				if(antras.toInt() < pirmas.toInt()) {
-					CF= true;
-					OF=true;
-					 
-				}
-				
-				vm.setSF(CF,ZF,OF);
-				
-				Word toPut = new Word(Integer.toHexString(dalyba).toCharArray());
-				vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
-				stack--;
+				if(pirmas.toInt() == 0){// Zygimantas
+                    setPI(3);// Zygimantas
+                    
+                }
+				else {
+					
+					
+					int dalyba = antras.toInt() / pirmas.toInt();
+					boolean CF=false,OF=false,ZF = false;
+					if(dalyba==0) {
+						ZF=true;
+					}
+					if(antras.toInt() < pirmas.toInt()) {
+						CF= true;
+						OF=true;
+						 
+					}
+					Word toPut = new Word();
+					String result = Integer.toHexString(dalyba);
+					
+					
+					int numberIndex=3;
+					for(int i=result.length()-1; i>=0; i--) {
+						toPut.setByte(numberIndex,result.charAt(i));
+						numberIndex--;
+					}
+					
+					
+					
+					//Word toPut = new Word(Integer.toHexString(dalyba).toCharArray());
+					vmMemory[(stack-1)/16][(stack-1)%16]=toPut;
+					stack--;
+					vm.setSF(CF,ZF,OF);
+			}
 				vm.setSP((char)stack);
 				vm.setPC(vmPC);
 				SP=(char)stack;
@@ -598,8 +704,8 @@ public class RM {
 				Word pirmas = vmMemory[stack/16][stack%16];
 				Word antras = vmMemory[(stack-1)/16][(stack-1)%16];
 				boolean CF=false,OF=false,ZF = false;
-				System.out.println("antras" + antras.toInt());
-				System.out.println("pirmas" +pirmas.toInt());
+				//System.out.println("antras" + antras.toInt());
+				//System.out.println("pirmas" +pirmas.toInt());
 				if(antras.toInt()==pirmas.toInt()) {
 					System.out.println("Lygus");
 					ZF=true;
@@ -621,12 +727,22 @@ public class RM {
 			case "PSH ": {
 				vmPC++; // nes sekantis zodis argumentas skaicius
 				String skaicius = vmMemory[(vmPC)/16][(vmPC)%16].toString(); // grazina hex string
+				for(int i=0; i<4; i++) {
+					if(skaicius.charAt(i)<'0' || skaicius.charAt(i)>'F' || (skaicius.charAt(i)>'9' && skaicius.charAt(i)<'A')) {
+						setPI(3);
+						vmPC++;
+						vm.setPC(vmPC);
+						PC=vmPC;
+						decrTimer(1);
+						return command;
+					}
+				}
 				command.concat(skaicius);
 				int stack = (int) vm.getSP();
 				stack++;
 				
 				//Integer.parseInt(String.valueOf(SP),16);
-				vmMemory[stack/16][stack%16]=vmMemory[(vmPC)/16][(vmPC)%16];
+				vmMemory[stack/16][stack%16].setBytes(vmMemory[(vmPC)/16][(vmPC)%16].getBytes());
 				vmPC++; // prieiti prie kitos komandos
 				vm.setSP((char)stack);
 				vm.setPC(vmPC);
@@ -642,7 +758,7 @@ public class RM {
 				//setMODE('1');
 				setSI(4);
 				vmPC++;
-				vm.setPC(PC);
+				vm.setPC(vmPC);
 				PC=vmPC;
 				//setCHByte(1); // 2asis channel (nuo nulio skaiciuojame)
 				return command;
@@ -704,41 +820,80 @@ public class RM {
 		}
 		
 		if(command.startsWith("WR")) {
-			vmPC++;
-			int sharedBlockNr=Integer.parseInt(command.substring(2, 3));
-			int sharedBlockWord = Integer.parseInt(command.substring(3,4));
-			// TODO patikrinimas su RM ar uzrakintas blokas su numeriu sharedBlockNr
-			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
-			//Word[][] rmMemory=rm.getMemory();
-			int address=(60+sharedBlockNr-1)*16+(sharedBlockWord-1);
-			memory[address/16][address%16]= vmMemory[stack/16][stack%16];
-			stack--;// ? ar reikia?
 			
+			int sharedBlockNr=Integer.parseInt(command.substring(2, 3),16);
+			int sharedBlockWord = Integer.parseInt(command.substring(3,4),16);
+			if(sharedBlockNr>3 || sharedBlockNr<1) {
+				setPI(1);
+			}
+			else if(sharedBlockWord>=16 || sharedBlockWord<0) {
+				setPI(1);
+			}
+			else {
+				if(memory[63][sharedBlockNr-1].toInt()==vm.getVmIndex()) {
+					// TODO patikrinimas su RM ar uzrakintas blokas su numeriu sharedBlockNr
+					int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+					//Word[][] rmMemory=rm.getMemory();
+					int address=(60+sharedBlockNr-1)*16+(sharedBlockWord);
+					System.out.println("adresas" +address);
+					memory[address/16][address%16].setBytes(vmMemory[stack/16][stack%16].getBytes());
+					stack--;// ? ar reikia?
+					SP=(char)stack;
+					vm.setSP((char)stack);
+					
+					
+				}
+				else {
+					setPI(4);
+				}
+				
+			}
+			vmPC++;
 			vm.setPC(vmPC);
-			vm.setSP((char)stack);
+			
 			PC=vmPC;
-			SP=(char)stack;
+			
 			decrTimer(1);
 			return command;
 		}
 		
 		if(command.startsWith("RD")) {
-			vmPC++;
-			int sharedBlockNr=Integer.parseInt(command.substring(2, 3));
-			int sharedBlockWord = Integer.parseInt(command.substring(3,4));
-			// TODO patikrinimas su RM ar uzrakintas blokas su numeriu sharedBlockNr
 			
-			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
-			stack++;// ? ar reikia?
-			//Word[][] rmMemory=rm.getMemory();
-			int address=(60+sharedBlockNr-1)*16+(sharedBlockWord-1); // ta 60 kazkaip apsirasyt reiktu aka kur prasideda bendra atmintis
-			vmMemory[stack/16][stack%16]= memory[address/16][address%16];
-			vm.setPC(vmPC);
-			vm.setSP((char)stack);
-			PC=vmPC;
-			SP=(char)stack;
-			decrTimer(1);
-			return command;
+			
+				int sharedBlockNr=Integer.parseInt(command.substring(2, 3),16);
+				int sharedBlockWord = Integer.parseInt(command.substring(3,4),16);
+				if(sharedBlockNr>3 || sharedBlockNr<1) {
+					setPI(1);
+				}
+				else if(sharedBlockWord>=16 || sharedBlockWord<0) {
+					setPI(1);
+				}
+				else {
+					if(memory[63][sharedBlockNr-1].toInt()==vm.getVmIndex()) {
+						int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+						stack++;// ? ar reikia?
+						//Word[][] rmMemory=rm.getMemory();
+						int address=(60+sharedBlockNr-1)*16+(sharedBlockWord); // ta 60 kazkaip apsirasyt reiktu aka kur prasideda bendra atmintis
+						vmMemory[stack/16][stack%16].setBytes(memory[address/16][address%16].getBytes());
+						
+						vm.setSP((char)stack);
+						
+						SP=(char)stack;
+						
+						
+					}
+						else {
+							setPI(4);
+						}
+				}
+				
+				vmPC++;
+				vm.setPC(vmPC);
+				
+				PC=vmPC;
+				
+				decrTimer(1);
+				return command;
 		}
 		
 		if(command.startsWith("LC")) {
@@ -787,7 +942,25 @@ public class RM {
 		if(command.startsWith("LD")) {
 			
 			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int poslinkis = Integer.parseInt(stringAddress,16);
+			if(poslinkis>=0x70 || poslinkis <0) {
+				setPI(1);
+				vmPC++;
+				vm.setPC(vmPC);
+				PC=vmPC;
+				decrTimer(1);
+				return command;
+			}
 			int dsValue = (int)vm.getDS();
 			//SP= vm.getSP();
 			
@@ -806,7 +979,7 @@ public class RM {
 				stack=SP;
 			}
 			//System.out.println(" Stack: " +stack);
-			vmMemory[stack/16][stack%16]=vmMemory[dsValue+poslinkis/16][dsValue+poslinkis%16]; 
+			vmMemory[stack/16][stack%16].setBytes(vmMemory[dsValue+poslinkis/16][dsValue+poslinkis%16].getBytes());
 			vmPC++;
 			vm.setPC(vmPC);
 			vm.setSP((char)stack);
@@ -818,9 +991,29 @@ public class RM {
 		
 		if(command.startsWith("PT")) {
 			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int address = Integer.parseInt(stringAddress,16);
+			if(address>=0x70 || address <0) {
+				setPI(1);
+				vmPC++;
+				vm.setPC(vmPC);
+				PC=vmPC;
+				decrTimer(1);
+				return command;
+			}
 			int dsValue = (int)vm.getDS();
 			int stack = (int)vm.getSP();//Integer.parseInt(String.valueOf(SP),16);
+			
+			vmMemory[(dsValue+address)/16][(dsValue+address)%16].setBytes(vmMemory[stack/16][stack%16].getBytes());
 			if(stack/16>=16) { // arba sakai kad pilnas stack arba eini is naujo
 				vm.setSP((char)0xE0);
 				SP=0xE0;
@@ -831,20 +1024,40 @@ public class RM {
 				SP=0xFF;
 				stack=SP;
 			}
-			vmMemory[dsValue+address/16][dsValue+address%16]=vmMemory[stack/16][stack/16];
 			stack--;
+			
 			vmPC++;
 			vm.setPC(vmPC);
 			vm.setSP((char)stack);
 			PC=vmPC;
 			SP=(char)stack;
+			decrTimer(1);
 			 /// gal atvirksciai? keiciam virtualios ir gale nustatom realios turbut taip ir geriau bus reiks pakeist
 			
 			return command;
 		}
 		
 		if(command.startsWith("JP")) {
-			int posl = Integer.parseInt(command.substring(2,4),16); // nera tikrinimo geru reiksmiu 
+			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
+			int posl = Integer.parseInt(command.substring(2,4),16); // nera tikrinimo geru reiksmiu
+			if(posl>=70 || posl <0) {
+				setPI(1);
+				vmPC++;
+				vm.setPC(vmPC);
+				PC=vmPC;
+				decrTimer(1);
+				return command;
+			}
 			int cs = (int)vm.getCS();
 			vmPC=posl+cs;
 			vm.setPC(vmPC);
@@ -853,10 +1066,29 @@ public class RM {
 			return command;
 		}
 		if(command.startsWith("JE")){
+			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int cs = (int)vm.getCS();
 			char tempSF=vm.getSF();
 			if ((tempSF & 0b00000010) == 0b00000010){ // ZF=1
 				int posl = Integer.parseInt(command.substring(2,4),16);
+				if(posl>=0x70 || posl <0) {
+					setPI(1);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
 				vmPC=posl+cs;
 				
 			}
@@ -870,10 +1102,29 @@ public class RM {
 			return command;
 		}
 		if(command.startsWith("JB")) {
+			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int cs = (int)vm.getCS();
 			char tempSF=vm.getSF();
 			if((tempSF & 0b00000100) == 0b0000000100) { // CF=1
 				int posl = Integer.parseInt(command.substring(2,4),16);
+				if(posl>=0x70 || posl <0) {
+					setPI(1);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
 				vmPC=posl+cs;
 				
 				
@@ -888,10 +1139,29 @@ public class RM {
 			return command;
 		}
 		if(command.startsWith("JA")){ // ZF = 0 and CF = 0
+			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int cs = (int)vm.getCS();
 			char tempSF=vm.getSF();
 			if((tempSF & 0b00000110) == 0b000000000) {
 				int posl = Integer.parseInt(command.substring(2,4),16);
+				if(posl>=0x70 || posl <0) {
+					setPI(1);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
 				vmPC=posl+cs;
 				
 				
@@ -907,11 +1177,30 @@ public class RM {
 			return command;
 		}
 		if(command.startsWith("JN")) {
+			String stringAddress = command.substring(2,4);
+			for(int i=0; i<2; i++) {
+				if(stringAddress.charAt(i)<'0' || stringAddress.charAt(i)>'F' || (stringAddress.charAt(i)>'9' && stringAddress.charAt(i)<'A') ) {
+					setPI(3);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
+			}
 			int cs = (int)vm.getCS();
 			char tempSF=vm.getSF();
 			//System.out.println("SF "+(int)SF);
 			if((tempSF & 0b00000010) == 0b000000000) { // ZF=0
 				int posl = Integer.parseInt(command.substring(2,4),16);
+				if(posl>=0x70 || posl <0) {
+					setPI(1);
+					vmPC++;
+					vm.setPC(vmPC);
+					PC=vmPC;
+					decrTimer(1);
+					return command;
+				}
 				vmPC=posl+cs;
 				
 			}
@@ -1051,9 +1340,12 @@ public class RM {
 				if(currentByte!='\u0000') {
 					vm.getMemory()[address/16][address%16].setByte(j,currentByte);
 				}
+
 				
 			}
+			address++;
 		}
+		
 		
 	}
 	

@@ -35,6 +35,7 @@ public class InteractiveOS {
 		//2. sukuria VM
 		Scanner scanner = new Scanner(System.in);
 		boolean success =false;
+		boolean finished=false;
 		
 		while (running) {
 			System.out.print("command: ");
@@ -58,7 +59,9 @@ public class InteractiveOS {
 				//VM vm = new VM();
 				
 				System.out.println("Uznkraunama programa"); // manau reikia laodint kartu kai pasirenki faila taip ir darom nvm failas vm kurimas programos uzloadinimas
+				//printMemory(vm);
 				success = rm.loadProgram(file,program,vm);
+				//printMemory(vm);
 				if(success==true) {
 					System.out.println("Programa uzkrauta");
 					command = rm.getNextCommand(vm);
@@ -66,6 +69,7 @@ public class InteractiveOS {
 					printRegisters(rm);
 					printRegisters(vm);
 					printMemory(vm);
+					finished=false;
 				}
 				else {
 					System.out.println("Nepavyko uzkrauti programos");
@@ -75,7 +79,11 @@ public class InteractiveOS {
 			case "run":
 				if(success==false) {
 					System.out.println("VM not yet created");
-				} 
+				}
+				
+				else if(finished==true) {
+					System.out.println("Programa baigus darba");
+				}
 				else {
 					
 					while(true) {
@@ -93,19 +101,23 @@ public class InteractiveOS {
 							 returnedCommand = rm.processCommand(vm);
 							 
 							 command=rm.getNextCommand(vm);
-								System.out.println("NextCommand" + command);
+								///System.out.println("NextCommand" + command);
 							//String command="Labas";
 								//for(int i=0; i<10; i++) {
 									//rm.processCommand(vm);
 									//System.out.println(command);
 									
 								//}
-							 System.out.println("executed command: " + returnedCommand);
+							 ///System.out.println("executed command: " + returnedCommand);
 						}
 						
 						
 						rm.setMODE('1'); // supervisor mode
 						if(rm.processInterrupt(vm)==1) { // HALT
+							if(rm.getSI()==7) {
+								finished=true;
+								System.out.println("Programa baigus darba");
+							}
 							//Word[][] memory = vm.getMemory();
 							printRegisters(rm);
 							printRegisters(vm);
@@ -121,25 +133,38 @@ public class InteractiveOS {
 				break;
 				
 			case "step":
-				//command=rm.getNextCommand(vm);
-				//System.out.println("Next Command: " +command);
-				if(rm.getInterrupt()==0) {
-					String returnedCommand = rm.processCommand(vm);
-					System.out.println("executed command: " + returnedCommand);
-					
+				
+				if(success==false) {
+					System.out.println("Neuzkrauta programa");
+				}
+				else if(finished==true) {
+					System.out.println("Programa pasiekus gala");
 				}
 				else {
-					//rm.setMODE('1'); // reiks issimt nes cia negaliu keitaliot rm lol
-					if(rm.processInterrupt(vm)==1) {
-						System.out.println("Program End");
+					//command=rm.getNextCommand(vm);
+					//System.out.println("Next Command: " +command);
+					if(rm.getInterrupt()==0) {
+						String returnedCommand = rm.processCommand(vm);
+						System.out.println("executed command: " + returnedCommand);
+						
 					}
+					else {
+						//rm.setMODE('1'); // reiks issimt nes cia negaliu keitaliot rm lol
+						if(rm.processInterrupt(vm)==1) {
+							if(rm.getSI()==7) {
+								System.out.println("Program End");
+								finished=true;
+							}
+							
+						}
+					}
+					printRegisters(rm);
+					printRegisters(vm);
+					//printChannelStates(rm);
+					printMemory(vm);
+					command = rm.getNextCommand(vm);
+					System.out.println("Next Command: " +command);
 				}
-				printRegisters(rm);
-				printRegisters(vm);
-				//printChannelStates(rm);
-				printMemory(vm);
-				command = rm.getNextCommand(vm);
-				System.out.println("Next Command: " +command);
 				break;
 				
 			
@@ -282,7 +307,7 @@ public class InteractiveOS {
 	public static void clean(RM rm) {
 		rm.setSI(0);
 		rm.setPI(0);
-		rm.setMODE((char)0);
+		rm.setMODE('0');
 		rm.setTI(10);
 		rm.setCH(new char[] {'0','0','0'});
 		

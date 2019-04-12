@@ -49,12 +49,12 @@ public class Word {
 	
 	}
 	public int toInt() {
-		 return Integer.parseInt(String.valueOf(data),16);
+		 return Integer.parseUnsignedInt(String.valueOf(data),16); // buvo su signed
 		 
 	}
 	
 	public void fromInt(int number) {
-		
+		//this.data[3]=Integer.toHexString(number)
 		this.data = (Integer.toHexString(number).toCharArray()); // damn kazkaip reikia atgal i sesioliktaine
 	}
 }

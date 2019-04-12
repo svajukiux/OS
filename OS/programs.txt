@@ -5,18 +5,8 @@ DATA
 CODE
 LD00
 LD01
-CMP 
-JN00
-HALT
-*
-program2
-DATA
-5 W 5
-10 w 6
-CODE
-LD05
-LD10
 CMP
+JN00
 HALT
 *
 
@@ -33,5 +23,55 @@ PR05
 IPSH
 CMP
 JN00
+HALT
+*
+
+program4
+DATA
+3C b "Ivesk savo varda"
+50 b "Labas"
+CODE
+PSH 10
+PPOP
+PR3C
+PSH 10
+RI52
+PSH 20
+PR50
+HALT
+*
+
+program5
+DATA
+CODE
+PSH F
+PSH FF
+LC1
+WR10
+LC2
+WR20
+RD10
+UC1
+PPOP
+RD20
+UC2
+PPOP
+HALT
+*
+
+program6
+DATA
+0 w 111
+1 w 666
+2 w 333
+CODE
+LD00
+LD01
+ADD
+LD02
+SUB
+PT10
+PSH 4
+PR10
 HALT
 *

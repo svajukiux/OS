@@ -43,7 +43,14 @@ public class InputDevice {
 			try {
 				s= br.readLine();
 				if(s.length()<numberOfBytes) { //  buvo vietoj <  !=
-					throw new IOException("Baitu skaicius per mazas");
+					System.out.println("Neuzpildytas visas buferis gale bus zvaigzdutes simbolis");
+					//int doneBytes=0;
+					//int length
+					//while(s.length)
+					//char end='\u0000';
+					s=s.concat("*");
+					numberOfBytes=s.length();
+					System.out.println(s);
 				}
 				if(s.length()>numberOfBytes) {
 					System.out.println("Ivestis per ilga. Nebus nuskaitytas visas zodis");

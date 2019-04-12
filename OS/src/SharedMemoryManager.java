@@ -66,11 +66,16 @@ public class SharedMemoryManager {
 	public boolean LC(RM rm, VM vm) {
 		Word[][] rmMemory = rm.getMemory();
 		Word[][] vmMemory = vm.getMemory();
-		Word command = vmMemory[vm.getPC()/16][vm.getPC()%16];
+		Word command = vmMemory[(vm.getPC()-1)/16][(vm.getPC()-1)%16];
 		vmIndex= vm.getVmIndex();
+		char charIndex = (char)(vmIndex + '0');
 		blockNr= Integer.parseInt(command.toString().substring(2,3));
+		if(blockNr>3 || blockNr<0) {
+			rm.setPI(1);
+			return false;
+		}
 		if(rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].toInt()==0) { // 63 reiktu turbut while nes juk turetu laukti kol atsiblokuos
-			rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].fromInt(vmIndex);// 63 last blokas kuriame sudeta info apie sharedmemory ??? buvo su Word metodu vietoj void
+			rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].setByte(3,charIndex);// 63 last blokas kuriame sudeta info apie sharedmemory ??? buvo su Word metodu vietoj void
 			rm.setSI(0);
 			return true;
 		}
@@ -93,10 +98,13 @@ public class SharedMemoryManager {
 		
 		Word[][] rmMemory = rm.getMemory();
 		Word[][] vmMemory = vm.getMemory();
-		Word command = vmMemory[vm.getPC()/16][vm.getPC()%16];
+		Word command = vmMemory[(vm.getPC()-1)/16][(vm.getPC()-1)%16];
 		vmIndex= vm.getVmIndex();
 		blockNr= Integer.parseInt(command.toString().substring(2,3));
-		
+		if(blockNr>3 || blockNr<0) {
+			rm.setPI(1);
+			return false;
+		}
 		if(rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].toInt()==0) { // 63 reiktu turbut while nes juk turetu laukti kol atsiblokuos
 			System.out.println("Blokas jau atrakintas");
 			rm.setSI(0);
@@ -109,7 +117,7 @@ public class SharedMemoryManager {
 			
 		}
 		else if(rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].toInt()==vmIndex) {
-			rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].fromInt(0);
+			rmMemory[startingSharedAddress+numberOfSharedBlocks][blockNr-1].setByte(3,'0');
 			rm.setSI(0);
 			System.out.println("Blokas sekmingai atrakintas.");
 			return true;

@@ -44,7 +44,7 @@ public class ProgramParser {
 					
 			}
 		
-			System.out.println("Hi");
+			//System.out.println("Hi");
 			parseCode(br,vm);
 			
 				
@@ -62,10 +62,11 @@ public class ProgramParser {
 		//int dataWords =0; // kolkas nezinau kam
 		
 		while(((line = br.readLine())!=null)) {
+			//System.out.println("line"+ line);
 			if(line.startsWith("CODE")){
 				
 				//commands.add("[STC]"); // pasiekem code segment
-				System.out.println("STC");
+				//System.out.println("STC");
 				parsedDataGracefully = true; // galim eit code segmen parsinima
 				return;
 			}
@@ -81,7 +82,7 @@ public class ProgramParser {
 			for(int i=0; i<data.length; i++) {
 				data[i].trim();
 			}
-			System.out.println("data"+Arrays.toString(data));
+			//System.out.println("data"+Arrays.toString(data));
 			
 				ArrayList<Word> rawData = new ArrayList<Word>(); //raw data of char arrays
 				for(int i=0; i<data.length; i++) {
@@ -101,7 +102,7 @@ public class ProgramParser {
 								rawData.add(temp);
 								lenghtCopied+=4;
 								length-=4;
-								System.out.println("Zodziai" +temp.toString());
+								//System.out.println("Zodziai" +temp.toString());
 							}
 							
 							if(length!=0 && length<4) { // jei maziau nei 4 baitai
@@ -198,7 +199,7 @@ public class ProgramParser {
 		String line;
 		ArrayList<Word> commands = new ArrayList<>();
 		while((line = br.readLine())!=null && !(line.equals("*"))) { // kiek zejau beveik visos musu komandos visos telpa i viena zodi su psh
-			System.out.println("command parsing"+ line);
+			//System.out.println("command parsing"+ line);
 			int length= line.length();
 			int added = 0;
 			
@@ -224,7 +225,7 @@ public class ProgramParser {
 				Word temp = new Word();
 				int left=length;
 				int position=4-left;
-				System.out.println("position" + position);
+				//System.out.println("position" + position);
 				for(int k=0; k<left; k++) { // length?
 					temp.setByte(position, line.charAt(added+k));
 					position++;
