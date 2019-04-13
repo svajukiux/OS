@@ -55,7 +55,7 @@ public class InputDevice {
 				if(s.length()>numberOfBytes) {
 					System.out.println("Ivestis per ilga. Nebus nuskaitytas visas zodis");
 				}
-				
+				//
 				int doneBytes=0;
 				while(numberOfBytes-4 >=0) {
 					

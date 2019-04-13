@@ -95,7 +95,7 @@ public class SharedMemoryManager {
 	}
 	
 	public boolean UC(RM rm, VM vm) {
-		
+		//
 		Word[][] rmMemory = rm.getMemory();
 		Word[][] vmMemory = vm.getMemory();
 		Word command = vmMemory[(vm.getPC()-1)/16][(vm.getPC()-1)%16];

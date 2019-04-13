@@ -8,7 +8,7 @@ public class Word {
 											 // su kokiu ciklu
 		// galbut reikia inicijuotu nul tais o ne nuliais
 	}
-	
+	//
 	public Word(Word src) {
 		data = src.data.clone();
 	}

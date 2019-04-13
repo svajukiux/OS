@@ -75,7 +75,7 @@ public class InteractiveOS {
 					System.out.println("Nepavyko uzkrauti programos");
 				}
 				break;
-			
+			//
 			case "run":
 				if(success==false) {
 					System.out.println("VM not yet created");

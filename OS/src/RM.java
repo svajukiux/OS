@@ -683,7 +683,7 @@ public class RM {
 						numberIndex--;
 					}
 					
-					
+					//
 					
 					//Word toPut = new Word(Integer.toHexString(dalyba).toCharArray());
 					vmMemory[(stack-1)/16][(stack-1)%16]=toPut;

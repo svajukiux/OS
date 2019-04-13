@@ -19,7 +19,7 @@ public class OutputDevice {
 			}
 		}
 		System.out.println("");
-		
+		//
 	}
 	
 	

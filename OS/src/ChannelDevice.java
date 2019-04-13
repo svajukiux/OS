@@ -10,7 +10,7 @@ public class ChannelDevice{
     public ChannelDevice(){
         blocked = false;
     }
-    
+    //
     public Word xchg(InputDevice inputDevice){
         return inputDevice.readWord();
     }
