@@ -10,7 +10,7 @@ JN00
 HALT
 *
 
-program3
+program2
 DATA
 0 b "Iveskite skaiciu"
 5 b "Iveskite dar viena skaiciu"
@@ -26,7 +26,7 @@ JN00
 HALT
 *
 
-program4
+program3
 DATA
 3C b "Ivesk savo varda"
 50 b "Labas"
@@ -41,7 +41,7 @@ PR50
 HALT
 *
 
-program5
+program4
 DATA
 CODE
 PSH F
@@ -59,7 +59,7 @@ PPOP
 HALT
 *
 
-program6
+program5
 DATA
 0 w 111
 1 w 666

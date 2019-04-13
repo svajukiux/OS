@@ -180,6 +180,10 @@ public class InteractiveOS {
 			case "exit":
 				running=false;
 				break;
+				
+			default:
+				System.out.println("Tokios komandos nera");
+				break;
 			}
 			
 			

@@ -12,6 +12,8 @@ public class VM {
 	private char DS; // vietoj char gallima naudot short reikes ziuret kaip patogiau galbut short patogiau
 	private char CS; // short o ne byte nes nesamone su signed unsigned javoj PC galimai reiktu int nes jam reikia 2 baitu
 	private int vmIndex;
+	
+	
 	//private SharedMemoryManager;
 	
 	

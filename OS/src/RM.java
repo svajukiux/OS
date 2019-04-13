@@ -405,7 +405,8 @@ public class RM {
 		lastCreatedVm=0; 
 		MODE = '0';
 		manager = new SharedMemoryManager(60,3); // bendra atmintis prasideda 60 bloke ir yra 3 bendri blokai
-		memory = new Word[64][16];
+		memory = new Word[64][16]; // new byte [16*4*16*virtualiumasinukietis(pvz 5)] paskutinius 16 bloku supervizorine 
+		// reikia i supervizorine uzkrauti patikrinti ir tik tada kurti virtualia masina 2 virtualias
 		for(int i=0; i<64; ++i) {
 			for(int j=0; j<16; ++j) {
 				
@@ -1359,45 +1360,7 @@ public class RM {
 		}
 	}
 	
-	/*
-	public static void main(String args[]) {
-		String test = "HALT";
-		char[] test2= test.toCharArray();
-		
-		try {
-			byte[] bytes;
-			//bytes = test.getBytes("UTF-16BE"); // big edian
-			bytes = test.getBytes("UTF-8");
-			String hex = bytesToHex(bytes);
-			byte hexBytes[] = hexStringToByteArray(hex);
-			try {
-				byte hexLibraryBytes[] = Hex.decodeHex(hex);
-				for(int i=0; i< hexLibraryBytes.length; i++) {
-					System.out.println(hexLibraryBytes[i]);
-				}
-			} catch (DecoderException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			System.out.println(Arrays.toString(bytes));
-			System.out.println(bytes.length);
-			System.out.println(hex);
-			
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		int a = 0xFFFFFFFF;
-		int b = Integer.parseUnsignedInt("FFFFFFFF",16);
-		System.out.println(Integer.toUnsignedString(b));
-		
-		//System.out.println()
-		
-	}
 	
-*/	
 }
 
 
